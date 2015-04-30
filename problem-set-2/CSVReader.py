@@ -28,8 +28,9 @@ class CSVReader:
         for row in csv_input:
             if row_count == 0:
                 self.header = row
+                self.data = [[] for _ in range(len(row))]
             else:
-                self.data.append(row)
+                for i in range(0, len(row)): 
+                    self.data[i].append(row[i])
             row_count += 1
-
         return self.header, self.data
