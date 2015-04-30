@@ -31,7 +31,7 @@ class DecisionTree:
         #return dt
         pass
 
-    def DTL(examples, attributes):
+    def DTL(self, examples, attributes):
         """Fills a tree
 
         Returns:
@@ -53,7 +53,7 @@ class DecisionTree:
       #for the following for-loop, check attribute-type to determine the type of split to check for
       
     # DONE
-    def mode(examples):
+    def mode(self, examples):
       """Most common value in list
       
       Args:
@@ -73,7 +73,7 @@ class DecisionTree:
       return 0 if (num0 > num1) else 1
 
     # DONE
-    def sameClass(examples):
+    def sameClass(self, examples):
       """If all examples have same classification
       
       Args:
@@ -90,7 +90,7 @@ class DecisionTree:
 
         #TODO: WRITE splitData function (Aaron)
         
-    def splitData(examples, attribute, split):
+    def splitData(self, examples, attribute, split):
         """Makes sublists with data matching attribute
         
         Returns:
@@ -103,66 +103,66 @@ class DecisionTree:
         pass
         
         
-        #TODO: WRITE METADATALISTS FOR NOMINAL VALUES, AND CALL IT "values" (and numeric- at least ranges would     be nice; max, min; call it "stats"; stats[0] = min, stats[1] = max, stats[2] = range)  (Kapil)
+    #TODO: WRITE METADATALISTS FOR NOMINAL VALUES, AND CALL IT "values" (and numeric- at least ranges would     be nice; max, min; call it "stats"; stats[0] = min, stats[1] = max, stats[2] = range)  (Kapil)
+    #TODO: WRITE GAIN(examples, attribute, value). This should split data and caluclate the rihg thalf of that equation (DONT INCLUDE THE NEGATIVE SIGN)
 
+    def chooseAttribute(self, examples, attributes):
+      """Chooses best attribute to split on
 
-    def chooseAttribute(examples, attributes):
-        """Chooses best attribute to split on
-
-        Returns:
-            element bestAt: the best attribute to split on
-            number bestSplit: the best split for bestAt
-        """
-        #for each attribute -- calculate entropy at multiple points, compare them all together to find smallest
-        entropies = []
-        splits = []
-        #Set each value to be an array itself
-        for i in range(len(attributes)):
-            entropies[i] = []
-            splits[i] = []
-        
-        counter = 0
-        for attribute in attributes:
-            if meta[attribute]["type"] == "nominal":
-                rowcount = 0
-                for value in meta[attribute][values]:
-                    entropies[counter][rowcount] = entropy(examples, attribute, splitData(examples, attribute, value))
-                    splits[counter][rowcount] = value
-                    rowcount += 1
-            elif meta[attribute]["type"] == "numeric":
-                rowcount = 0
-                for i in range(meta[attribute][stats][0], meta[attribute][stats][1], meta[attribute][stats][2]/10):
-                    entropies[counter][rowcount] = entropy(examples, attribute, es[counter][rowcount] = entropy(examples, attribute, splitData(examples, attribute, i))
-                    splits[counter][rowcount] = i
-                    rowcount += 1
-            counter += 1
-        
-        minEntropy = 1
-        minOuterKey
-        minInnerKey
-        counter = 0
-        for cats in entropies:
-            rowcount = 0
-            for sub in cats:
-                if entropies[counter][rowcount] < minEntropy:
-                    minEntropy = entropies[counter][rowcount]
-                    minOuterKey = counter
-                    minInnerKey = rowcount
-                rowcount += 1
-            counter += 1
-        
-        bestAtt = attributes[minOuterKey]
-        bestSplit = splits[minOuterKey][minInnerKey]
-        return bestAtt, bestSplit
+      Returns:
+          element bestAt: the best attribute to split on
+          number bestSplit: the best split for bestAt
+      """
+      #for each attribute -- calculate entropy at multiple points, compare them all together to find smallest
+      gains = []
+      splits = []
+      #Set each value to be an array itself
+      for i in range(len(attributes)):
+        gains[i] = []
+        splits[i] = []
+      entropyS = entropy(examples);
+      counter = 0
+      for attribute in attributes:
+        if meta[attribute]["type"] == "nominal":
+          rowcount = 0
+          for value in meta[attribute][values]:
+            gains[counter][rowcount] = entropyS - gain(examples, attribute, value)
+            splits[counter][rowcount] = value
+            rowcount += 1
+        elif meta[attribute]["type"] == "numeric":
+          rowcount = 0
+          midpoint = (meta[attribute][stats][2] / 2) + meta[attribute][stats][0];
+          gains[counter][rowcount] = entropyS - gain(examples, attribute, midpoint)
+          splits[counter][rowcount] = midpoint
+          rowcount += 1
+        counter += 1
+      
+      maxGain = 0
+      maxOuterKey
+      maxInnerKey
+      counter = 0
+      for cats in gains:
+        rowcount = 0
+        for sub in cats:
+          if gains[counter][rowcount] > maxGain:
+            maxGain = gains[counter][rowcount]
+            maxOuterKey = counter
+            maxInnerKey = rowcount
+          rowcount += 1
+        counter += 1
+      
+      bestAtt = attributes[maxOuterKey]
+      bestSplit = splits[maxOuterKey][maxInnerKey]
+      return bestAtt, bestSplit
                     
 
     NON_ZERO_ADDITION = 1e-10 # must be added to avoid issues with log(0)
-    def entropy(self, examples, attribute):
+    #TODO: DO NOT USE AN ATTRIBUTE, ONLY EXAMPLES
+    def entropy(self, examples):
       """Calculate entropy of given att/spl
       
       Args:
           examples: training set of data as array of arrays
-          attribute: string attribute to calculate entropy for
       
       Returns:
           int: entropy of the attribute at the split
@@ -174,7 +174,7 @@ class DecisionTree:
       attribute_index = self.meta[attribute]["index"]
       
 
-    def prune(tree):
+    def prune(self, tree):
       """Prune the given tree
 
       Returns:
