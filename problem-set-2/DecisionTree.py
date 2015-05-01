@@ -100,7 +100,7 @@ class DecisionTree:
 
     #TODO: WRITE splitData function (Aaron)
       
-  def splitData(self, examples, attribute, split):
+  def splitData(self, examples, attribute, splits):
     """Makes sublists with data matching attribute
     
     Returns:
@@ -109,9 +109,44 @@ class DecisionTree:
     """
     #switch based on type
     #loop and add em
+
+    subtrees = []
+    questions = []
+    processed_data = [[] for _ in range(len(examples))]
+
+    if self.meta[attribute]["type"] == "numeric":
+      subtrees[0] = []
+      subtrees[1] = []
+      for i in range(len(examples[0])):
+        if examples[self.meta[attribute][index]][i] <= splits[0]:
+          subtrees[0].append(case)
+        elif examples[self.meta[attribute][index]][i] > splits[0]:
+          subtrees[1].append(case)
+        else
+          questions.append(case)
+
+    elif self.meta[attribute]["type"] == "nominal":
+      for i in range(len(splits)):
+        subtrees[i] = []
+      for i in range(len(examples[0])):
+        for j in range(len(splits)):
+          if examples[self.meta[attribute][index]][i] == splits[j]:
+            subtrees[j].append(case)
+          elif exampes[self.meta[attribute][index][i] == "?"]:
+            questions.append(case)
+
+    biggestTree = 0
+    largestSize = 0
+    for i in range(len(subtrees)):
+      if len(subtrees[i]) > largestSize:
+        largestSize = len(subtrees[i])
+        biggestTree = i
+    for case in questions:
+      subtrees[biggestTree].append(case)
     
-    pass
-      
+    return subtrees
+
+
       
   #TODO: WRITE METADATALISTS FOR NOMINAL VALUES, AND CALL IT "values" (and numeric- at least ranges would     be nice; max, min; call it "stats"; stats[0] = min, stats[1] = max, stats[2] = range)  (Kapil)
   #TODO: WRITE GAIN(examples, attribute, value). This should split data and caluclate the right half of that equation (DONT INCLUDE THE NEGATIVE SIGN)
@@ -121,7 +156,7 @@ class DecisionTree:
 
     Returns:
         element bestAt: the best attribute to split on
-        number bestSplit: the best split for bestAt
+        number bestSplits: the lits of best splits for bestAt
     """
     #for each attribute -- calculate entropy at multiple points, compare them all together to find smallest
     gains = []
@@ -133,17 +168,17 @@ class DecisionTree:
     entropyS = entropy(examples);
     counter = 0
     for attribute in attributes:
-      if meta[attribute]["type"] == "nominal":
+      if self.meta[attribute]["type"] == "nominal":
         rowcount = 0
-        for value in meta[attribute][values]:
-          gains[counter][rowcount] = entropyS - gain(examples, attribute, value)
+        for value in self.meta[attribute][values]:
           splits[counter][rowcount] = value
           rowcount += 1
-      elif meta[attribute]["type"] == "numeric":
+        gains[counter] = entropyS - gain(examples, attribute, splits[counter])
+      elif self.meta[attribute]["type"] == "numeric":
         rowcount = 0
-        midpoint = (meta[attribute][stats][2] / 2) + meta[attribute][stats][0];
-        gains[counter][rowcount] = entropyS - gain(examples, attribute, midpoint)
+        midpoint = (self.meta[attribute][stats][2] / 2) + self.meta[attribute][stats][0]; 
         splits[counter][rowcount] = midpoint
+        gains[counter] = entropyS - gain(examples, attribute, splits[counter])
         rowcount += 1
       counter += 1
     
@@ -152,18 +187,14 @@ class DecisionTree:
     maxInnerKey
     counter = 0
     for cats in gains:
-      rowcount = 0
-      for sub in cats:
-        if gains[counter][rowcount] > maxGain:
-          maxGain = gains[counter][rowcount]
-          maxOuterKey = counter
-          maxInnerKey = rowcount
-        rowcount += 1
+      if gains[counter] > maxGain:
+        maxGain = gains[counter]
+        maxOuterKey = counter
       counter += 1
     
     bestAtt = attributes[maxOuterKey]
-    bestSplit = splits[maxOuterKey][maxInnerKey]
-    return bestAtt, bestSplit
+    bestSplits = splits[maxOuterKey]
+    return bestAtt, bestSplits
                   
 
   EPSILON = math.exp(-100) # must be added to avoid issues with log(0)
