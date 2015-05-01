@@ -7,6 +7,7 @@ class DecisionTree:
       data: list of lists with parsed data
       meta: dictionary identifying headers
       dt: the full decision tree
+      exclude: holds all attributes already checked
   """
 
   def __init__(self, tempdata, tempmeta):
@@ -64,7 +65,7 @@ class DecisionTree:
     
   # DONE
   def mode(self, examples):
-    """Most common value in list
+    """Most common binary value in a list
     
     Args:
       examples (list): values to check, must be binary
@@ -92,24 +93,20 @@ class DecisionTree:
     Returns:
       boolean: whether all examples are of the same class.
     """
-    first_classification = examples[0]
-    for element in examples:
-      if element != first_classification:
-        return False
-    return True
-
-    #TODO: WRITE splitData function (Aaron)
+    return all(x == examples[0] for x in examples)
       
   def splitData(self, examples, attribute, splits):
     """Makes sublists with data matching attribute
+
+    Args: 
+      examples (list of list): list of lists containing all data
+      attribute (string): attribute to split on and calculate gain
+      splits (list): items to split examples on
     
     Returns:
         list[]: the data fitting along the split
         list[]: the data fitting outside the split
     """
-    #switch based on type
-    #loop and add em
-
     subtrees = []
     questions = []
     processed_data = [[] for _ in range(len(examples))]
@@ -122,7 +119,7 @@ class DecisionTree:
           subtrees[0].append(case)
         elif examples[self.meta[attribute][index]][i] > splits[0]:
           subtrees[1].append(case)
-        else
+        else:
           questions.append(case)
 
     elif self.meta[attribute]["type"] == "nominal":
@@ -165,7 +162,6 @@ class DecisionTree:
     for i in range(len(attributes)):
       gains[i] = []
       splits[i] = []
-    entropyS = entropy(examples);
     counter = 0
     for attribute in attributes:
       if self.meta[attribute]["type"] == "nominal":
@@ -173,12 +169,12 @@ class DecisionTree:
         for value in self.meta[attribute][values]:
           splits[counter][rowcount] = value
           rowcount += 1
-        gains[counter] = entropyS - gain(examples, attribute, splits[counter])
+        gains[counter] = gain(examples, attribute, splits[counter])
       elif self.meta[attribute]["type"] == "numeric":
         rowcount = 0
         midpoint = (self.meta[attribute][stats][2] / 2) + self.meta[attribute][stats][0]; 
         splits[counter][rowcount] = midpoint
-        gains[counter] = entropyS - gain(examples, attribute, splits[counter])
+        gains[counter] = gain(examples, attribute, splits[counter])
         rowcount += 1
       counter += 1
     
@@ -202,7 +198,7 @@ class DecisionTree:
     """Calculate entropy of given att/spl
     
     Args:
-        classification: training set of data as array of arrays
+        classification: list of classifications for training set
     
     Returns:
         float: entropy of the attribute at the split
@@ -219,74 +215,39 @@ class DecisionTree:
       total_rows += 1
 
     total_rows = float(total_rows)
-    return (-(binary_1_count/total_rows) * math.log(EPSILON + (binary_1_count/total_rows), 2)) - ((binary_0_count/total_rows) * math.log(EPSILON + (binary_0_count/total_rows), 2))
 
-  # TODO: MAKE SURE MISSING ? ARE HANDLED
+    positive_probability = (binary_1_count/total_rows)
+    negative_probability = (binary_0_count/total_rows)
+    return (-positive_probability * math.log(EPSILON + positive_probability, 2)) - (negative_probability * math.log(EPSILON + negative_probability, 2))
+
+
   def gain(self, examples, attribute, splits):
-    """Calculates information gain for 
+    """Calculates information gain for an attribute among all its splits.
+
+    Args: 
+      examples (list of list): list of lists containing all data
+      attribute (string): attribute to split on and calculate gain
+      splits (list): items to split examples on
+
+    Returns:
+      (float): gain acquired from splitting on attribute  
     """
-    if self.meta[attribute]["type"] == "numeric":
-      greater_split = []
-      lesser_split = []
-      total_split = []
-      greater_count = 0
-      lesser_count = 0
+    split_examples = splitData(examples, attribute, splits)
+    all_examples = []
+    all_count = 0
+    total_gain = 0
 
-      for i in range(examples[0]):
-        current_split_instance = examples[self.meta[attribute]["index"]][i]
-        current_class_instance = examples[binary_index][i]
+    # total examples and count
+    for split in split_examples:
+      all_examples += split[binary_index]
+    all_count = len(all_examples)
 
-        if current_split_instance != '?':
-          if current_split_instance <= split: 
-            lesser_split.append(current_class_instance)
-            lesser_count += 1
-          else:
-            greater_split.append(current_class_instance)
-            greater_count += 1
+    # split examples and count
+    for split in split_examples:
+      total_gain -= (len(split[binary_index])/all_count) * entropy(split[binary_index])
 
-      total_split = greater_split + lesser_split
-      greater_entropy = (greater_count/(greater_count + lesser_count)) * entropy(greater_split)
-      lesser_entropy = (lesser_count/(greater_count + lesser_count)) * entropy(lesser_split)
-      return entropy(total_split) - sum(greater_entropy, lesser_entropy)
-    else:
-      # contains split, number of examples, entropy
-      entropy_table = {}
-      total_split = []
-
-      for split in splits:
-        entropy_table[split] = {split_array: [], count: 0}
-        for i in range(examples[0]):
-          current_split_instance = examples[self.meta[attribute]["index"]][i]
-          current_class_instance = examples[binary_index][i]
-
-        if current_split_instance != '?':
-          if current_split_instance <= split: 
-            lesser_split.append(current_class_instance)
-            lesser_count += 1
-          else:
-            greater_split.append(current_class_instance)
-            greater_count += 1
-
-
-    current_attribute_outputs = []
-    current_attribute_count = 0
-    for split in splits:
-      for i in examples[0]: 
-        if self.meta[attribute]["type"] == "numeric":
-          if examples[self.meta[attribute]["index"]][i] <= split:
-
-
-
-    if self.meta[attribute]["type"] == "numeric":
-      last_split = None
-      next_split = splits[0]
-
-      for split in splits:
-        if not last_split:
-          pass
-
-    else:
-      pass
+    total_gain += entropy(all_examples)
+    return total_gain
 
   def sort_attributes(self, attribute, output):
     """Sorts a numeric attribute and its corresponding classfication
