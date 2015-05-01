@@ -111,7 +111,7 @@ class DecisionTree:
     #loop and add em
 
     subtrees = []
-
+    questions = []
     processed_data = [[] for _ in range(len(examples))]
 
     if self.meta[attribute]["type"] == "numeric":
@@ -122,6 +122,8 @@ class DecisionTree:
           subtrees[0].append(case)
         elif examples[self.meta[attribute][index]][i] > splits[0]:
           subtrees[1].append(case)
+        else
+          questions.append(case)
 
     elif self.meta[attribute]["type"] == "nominal":
       for i in range(len(splits)):
@@ -130,7 +132,18 @@ class DecisionTree:
         for j in range(len(splits)):
           if examples[self.meta[attribute][index]][i] == splits[j]:
             subtrees[j].append(case)
+          elif exampes[self.meta[attribute][index][i] == "?"]:
+            questions.append(case)
 
+    biggestTree = 0
+    largestSize = 0
+    for i in range(len(subtrees)):
+      if len(subtrees[i]) > largestSize:
+        largestSize = len(subtrees[i])
+        biggestTree = i
+    for case in questions:
+      subtrees[biggestTree].append(case)
+    
     return subtrees
 
 
