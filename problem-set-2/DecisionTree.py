@@ -1,4 +1,5 @@
 import math
+import TreeElement
 
 class DecisionTree:
   """Creates and stores a decision tree
@@ -41,27 +42,35 @@ class DecisionTree:
     #return dt
     pass
 
-  def DTL(self, examples, attributes):
-    """Fills a tree
+  def DTL(self, examples, attributes, default = None):
+    """Builds a decision tree recursively
+
+    Args: 
+      examples (list of list): list of lists containing all data
+      attribute (string): attribute to split on and calculate gain
+      default (obj): value to use when examples are empty, None if no value specified
 
     Returns:
-        tree DecTree: the filled decision tree
+        TreeElement: the filled decision tree
     """
-    if not examples: #FIX THIS LINE- should be if examples is empt
-      return None
-    tempClassification = 0 #first example's classification
-    if True:
-      pass
+    if len(examples[0]) == 0:
+      return default
+    elif sameClass(examples[self.binary_index]):
+      return examples[self.binary_index][0]
+    elif len(attribute) == 0:
+      return mode(examples[self.binary_index])
+    else:
+      bestAtt, bestSplits = chooseAttribute(examples, attributes)
+      split_examples = splitData(examples, bestAtt, bestSplits)
 
-    if sameClass(examples):
-      return tempClassification
+      tree = TreeElement(bestAtt)
+      self.exclude.append(bestAtt)
 
-    if not attributes:
-      return mode(examples)
-    bestAtt = chooseAttribute(examples, attributes)
-    #TREE + NEW DT WITH ROOT TEST bestAtt
-
-    #for the following for-loop, check attribute-type to determine the type of split to check for
+      for split_index in range(len(bestSplits)): 
+        selected_examples = split_examples[split_index]
+        subtree = DTL(selected_examples, [att for att in attributes if att not in self.exclude], mode(examples[binary_index]))
+        tree.add_branch(TreeElement(subtrees))
+      return tree
     
   # DONE
   def mode(self, examples):
@@ -100,7 +109,7 @@ class DecisionTree:
 
     Args: 
       examples (list of list): list of lists containing all data
-      attribute (string): attribute to split on and calculate gain
+      attribute (string): attribute to split on
       splits (list): items to split examples on
     
     Returns:
@@ -151,6 +160,10 @@ class DecisionTree:
   def chooseAttribute(self, examples, attributes):
     """Chooses best attribute to split on
 
+    Args: 
+      examples (list of list): list of lists containing all data
+      attribute (string): attribute to split on and calculate gain
+
     Returns:
         element bestAt: the best attribute to split on
         number bestSplits: the lits of best splits for bestAt
@@ -179,8 +192,7 @@ class DecisionTree:
       counter += 1
     
     maxGain = 0
-    maxOuterKey
-    maxInnerKey
+    maxOuterKey = 0
     counter = 0
     for cats in gains:
       if gains[counter] > maxGain:
@@ -239,12 +251,12 @@ class DecisionTree:
 
     # total examples and count
     for split in split_examples:
-      all_examples += split[binary_index]
+      all_examples += split[self.binary_index]
     all_count = len(all_examples)
 
     # split examples and count
     for split in split_examples:
-      total_gain -= (len(split[binary_index])/all_count) * entropy(split[binary_index])
+      total_gain -= (len(split[self.binary_index])/all_count) * entropy(split[self.binary_index])
 
     total_gain += entropy(all_examples)
     return total_gain
