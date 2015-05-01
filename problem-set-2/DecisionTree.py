@@ -167,13 +167,11 @@ class DecisionTree:
                   
 
   EPSILON = math.exp(-100) # must be added to avoid issues with log(0)
-  #TODO: DO NOT USE AN ATTRIBUTE, ONLY EXAMPLES
-  # TODO: MAKE SURE MISSING ? ARE HANDLED
-  def entropy(self, examples):
+  def entropy(self, classification):
     """Calculate entropy of given att/spl
     
     Args:
-        examples: training set of data as array of arrays
+        classification: training set of data as array of arrays
     
     Returns:
         float: entropy of the attribute at the split
@@ -182,7 +180,7 @@ class DecisionTree:
     binary_0_count = 0
     total_rows = 0
 
-    for i in examples[self.binary_index]:
+    for i in classification:
       if i == 1:
         binary_1_count += 1
       elif i == 0:
@@ -196,8 +194,56 @@ class DecisionTree:
   def gain(self, examples, attribute, splits):
     """Calculates information gain for 
     """
-    # if numeric, --> less than, equal to 
-    total_gain = 0
+    if self.meta[attribute]["type"] == "numeric":
+      greater_split = []
+      lesser_split = []
+      total_split = []
+      greater_count = 0
+      lesser_count = 0
+
+      for i in range(examples[0]):
+        current_split_instance = examples[self.meta[attribute]["index"]][i]
+        current_class_instance = examples[binary_index][i]
+
+        if current_split_instance != '?':
+          if current_split_instance <= split: 
+            lesser_split.append(current_class_instance)
+            lesser_count += 1
+          else:
+            greater_split.append(current_class_instance)
+            greater_count += 1
+
+      total_split = greater_split + lesser_split
+      greater_entropy = (greater_count/(greater_count + lesser_count)) * entropy(greater_split)
+      lesser_entropy = (lesser_count/(greater_count + lesser_count)) * entropy(lesser_split)
+      return entropy(total_split) - sum(greater_entropy, lesser_entropy)
+    else:
+      # contains split, number of examples, entropy
+      entropy_table = {}
+      total_split = []
+
+      for split in splits:
+        entropy_table[split] = {split_array: [], count: 0}
+        for i in range(examples[0]):
+          current_split_instance = examples[self.meta[attribute]["index"]][i]
+          current_class_instance = examples[binary_index][i]
+
+        if current_split_instance != '?':
+          if current_split_instance <= split: 
+            lesser_split.append(current_class_instance)
+            lesser_count += 1
+          else:
+            greater_split.append(current_class_instance)
+            greater_count += 1
+
+
+    current_attribute_outputs = []
+    current_attribute_count = 0
+    for split in splits:
+      for i in examples[0]: 
+        if self.meta[attribute]["type"] == "numeric":
+          if examples[self.meta[attribute]["index"]][i] <= split:
+
 
 
     if self.meta[attribute]["type"] == "numeric":
@@ -210,6 +256,20 @@ class DecisionTree:
 
     else:
       pass
+
+  def sort_attributes(self, attribute, output):
+    """Sorts a numeric attribute and its corresponding classfication
+
+    Args:
+      attribute (array): list of values to be sorted
+      output (array): list of classifications corresponding to attribute
+
+    Returns: 
+      (array), (array): first array is sorted attribute, second is corresponding classification
+    """
+    sorted_tuples = sorted(zip(attribute, output))
+    return [att for (att, classification) in sorted_tuples], [classify for (att, classification) in sorted_tuples]
+
 
 
   def prune(self, tree):
