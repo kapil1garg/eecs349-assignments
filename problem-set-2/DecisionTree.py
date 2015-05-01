@@ -19,6 +19,15 @@ class DecisionTree:
         if self.meta[att]["type"] == "binary":
             self.binary_index = self.meta[att]["index"]
 
+  def preprocessing(self):
+    """Removes any unclassified instances from the training data and validation data"""
+    processed_data = [[] for _ in range(len(self.data))]
+    for i in range(len(self.data[0])): 
+      if self.data[self.binary_index][i] != "?":
+        for j in range(len(self.data)):
+          processed_data[j].append(self.data[j][i])
+    self.data = processed_data
+
   def treeMaker():
     """Creates the tree
 
@@ -159,6 +168,7 @@ class DecisionTree:
 
   EPSILON = math.exp(-100) # must be added to avoid issues with log(0)
   #TODO: DO NOT USE AN ATTRIBUTE, ONLY EXAMPLES
+  # TODO: MAKE SURE MISSING ? ARE HANDLED
   def entropy(self, examples):
     """Calculate entropy of given att/spl
     
@@ -182,6 +192,7 @@ class DecisionTree:
     total_rows = float(total_rows)
     return (-(binary_1_count/total_rows) * math.log(EPSILON + (binary_1_count/total_rows), 2)) - ((binary_0_count/total_rows) * math.log(EPSILON + (binary_0_count/total_rows), 2))
 
+  # TODO: MAKE SURE MISSING ? ARE HANDLED
   def gain(self, examples, attribute, splits):
     """Calculates information gain for 
     """

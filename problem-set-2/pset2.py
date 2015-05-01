@@ -1,7 +1,7 @@
 import CSVReader as csv
 import MetaReader as meta
 
-training_set = csv.CSVReader("./data/btest.csv")
+training_set = csv.CSVReader("./data/btrain.csv")
 training_header, training_data = training_set.readFile()
 
 print training_header
