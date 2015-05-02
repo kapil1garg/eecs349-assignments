@@ -95,24 +95,22 @@ class DecisionTree:
       bestAtt, bestSplits = self.chooseAttribute(copy.deepcopy(examples), copy.deepcopy(attributes))
       split_examples = self.splitData(copy.deepcopy(examples), copy.deepcopy(bestAtt), copy.deepcopy(bestSplits))
 
-      print bestAtt
-
       tree = TreeElement.TreeElement(copy.deepcopy(bestAtt))
       self.exclude.append(copy.deepcopy(bestAtt))
 
-      print self.exclude
-      #useAtts = []
+     #useAtts = []
       #for att in attributes:
       #  if self.exclude[att] == False:
       #    useAtts.append(att)
 
       for split_index in split_examples:
         print "Run for each split_example"
-        print len(split_index[0])
+        #print len(split_index[0])
         subtree = self.DTL(copy.deepcopy(split_index), [copy.deepcopy(att) for att in attributes if att not in self.exclude], self.mode(copy.deepcopy(examples[self.binary_index])))
         print " You made a subtree"
-        tree.add_branch(TreeElement.TreeElement(subtree))
+        tree.add_branch(TreeElement.TreeElement(copy.deepcopy(subtree)))
         print " You added the subtree"
+        print tree
       return tree
     
   # DONE
@@ -147,6 +145,7 @@ class DecisionTree:
     """
     return all(x == examples[0] for x in examples)
       
+
   def splitData(self, examples, attribute, splits):
     """Makes sublists with data matching attribute
 
@@ -159,47 +158,111 @@ class DecisionTree:
         list[]: the data fitting along the split
         list[]: the data fitting outside the split
     """
-    subtrees = [[]]*len(splits)
-    questions = [[]]*len(examples)
-    processed_data = [[] for _ in range(len(examples))]
+
+    subtrees = []
+    questions = [[]] * len(examples)
 
     if self.meta[attribute]["type"] == "numeric":
-      subtrees = [[]]*2
-      subtrees[0] = [[]]*len(examples)
-      subtrees[1] = [[]]*len(examples)
-      for i in range(len(examples[0])):
-        if examples[self.meta[attribute]["index"]][i] <= splits[0]:
-          for j in range(len(examples)):
-            subtrees[0][j].append(examples[j][i])
-        elif examples[self.meta[attribute]["index"]][i] > splits[0]:
-          for j in range(len(examples)):
-            subtrees[1][j].append(examples[j][i])
-        else:
-          for k in range(len(examples)):
-            questions[k].append(examples[k][i])
+      print "    numeric"
+      lessThan = [[]] * len(examples)
+      greaterThan = [[]] * len(examples)
+      for row in range(len(examples[0])): #for each row/element in examples
+        if examples[self.meta[attribute]["index"]][row] <= splits[0]:
+          for element in range(len(examples)): #for each column/attribute in examples
+            lessThan[element].append(copy.deepcopy(examples[element][row]))
+        elif examples[self.meta[attribute]["index"]][row] > splits[0]:
+          for element in range(len(examples)): #for each column/attribute in examples
+            greaterThan[element].append(copy.deepcopy(examples[element][row]))
+      subtrees.append(lessThan)
+      subtrees.append(greaterThan)
 
     elif self.meta[attribute]["type"] == "nominal":
-      for i in range(len(splits)):
-        subtrees[i] = [[]]*len(examples)
-      for i in range(len(examples[0])):
-        for j in range(len(splits)):
-          if examples[self.meta[attribute]["index"]][i] == splits[j]:
-            for k in range(len(examples)):
-              subtrees[j][k].append(examples[k][i])
-          elif examples[self.meta[attribute]["index"]][i] == "?":
-            for k in range(len(examples)):
-              questions[k].append(examples[k][i])
+      print "    nominal"
+      for split in splits: #for each split
+        tempTree = [[]] * len(examples)
+        for row in range(len(examples[0])): #for each row/element in examples
+          if examples[self.meta[attribute]["index"]][row] == split: #THIS IS NEVER TRUE
+            for element in range(len(examples)): #for each column/attribute in examples
+              tempTree[element].append(copy.deepcopy(examples[element][row]))
+          elif examples[self.meta[attribute]["index"]][row] == "?": #THIS IS TRUE A CRAZY NUMBER OF TIMES
+            for element in range(len(examples)): #for each column/attribute in examples
+              questions[element].append(copy.deepcopy(examples[element][row]))
+              #MAYBE I HAVE TO CHECK WITH THE SELF. THING FOR ATTRIBUTES INSTEAD OF USING ELEMENT??
+        subtrees.append(tempTree)
+        print " HERE COMES THE TREE"
+        print len(questions[0])
 
+
+    print "          Only once per runthrough"
     biggestTree = 0
     largestSize = 0
     for i in range(len(subtrees)):
       if len(subtrees[i][0]) > largestSize:
         largestSize = len(subtrees[i][0])
         biggestTree = i
+        print i
+        print len(subtrees[i][1])
     for i in range(len(questions[0])):
       for k in range(len(questions)):
         subtrees[biggestTree][k].append(questions[k][i])
     return subtrees
+
+
+  # def splitData(self, examples, attribute, splits):
+  #   """Makes sublists with data matching attribute
+
+  #   Args: 
+  #     examples (list of list): list of lists containing all data
+  #     attribute (string): attribute to split on
+  #     splits (list): items to split examples on
+    
+  #   Returns:
+  #       list[]: the data fitting along the split
+  #       list[]: the data fitting outside the split
+  #   """
+  #   subtrees = [[]]*len(splits)
+  #   questions = [[]]*len(examples)
+  #   processed_data = [[] for _ in range(len(examples))]
+
+  #   if self.meta[attribute]["type"] == "numeric":
+  #     subtrees = [[]]*2
+  #     subtrees[0] = [[]]*len(examples)
+  #     subtrees[1] = [[]]*len(examples)
+  #     for i in range(len(examples[0])):
+  #       if examples[self.meta[attribute]["index"]][i] <= splits[0]:
+  #         for j in range(len(examples)):
+  #           subtrees[0][j].append(examples[j][i])
+  #       elif examples[self.meta[attribute]["index"]][i] > splits[0]:
+  #         for j in range(len(examples)):
+  #           subtrees[1][j].append(examples[j][i])
+  #       else:
+  #         for k in range(len(examples)):
+  #           questions[k].append(examples[k][i])
+
+  #   elif self.meta[attribute]["type"] == "nominal":
+  #     for i in range(len(splits)):
+  #       subtrees[i] = [[]]*len(examples)
+  #     for i in range(len(examples[0])):
+  #       for j in range(len(splits)):
+  #         if examples[self.meta[attribute]["index"]][i] == splits[j]:
+  #           for k in range(len(examples)):
+  #             subtrees[j][k].append(examples[k][i])
+  #         elif examples[self.meta[attribute]["index"]][i] == "?":
+  #           for k in range(len(examples)):
+  #             questions[k].append(examples[k][i])
+
+  #   biggestTree = 0
+  #   largestSize = 0
+  #   for i in range(len(subtrees)):
+  #     if len(subtrees[i][0]) > largestSize:
+  #       largestSize = len(subtrees[i][0])
+  #       biggestTree = i
+  #       print i
+  #       print len(subtrees[i][0])
+  #   for i in range(len(questions[0])):
+  #     for k in range(len(questions)):
+  #       subtrees[biggestTree][k].append(questions[k][i])
+  #   return subtrees
 
 
   def getRow(self, examples, numRow):
