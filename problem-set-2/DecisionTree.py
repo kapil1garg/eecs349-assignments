@@ -105,7 +105,7 @@ class DecisionTree:
 
       for split_index in split_examples:
         subtree = self.DTL(split_index, [att for att in attributes if att not in self.exclude], self.mode(examples[self.binary_index]))
-        tree.add_branch(TreeElement(subtrees))
+        tree.add_branch(TreeElement.TreeElement(subtree))
       return tree
     
   # DONE
@@ -152,38 +152,46 @@ class DecisionTree:
         list[]: the data fitting along the split
         list[]: the data fitting outside the split
     """
-    subtrees = []
-    questions = []
+    subtrees = [[]]*len(splits)
+    questions = [[]]*len(examples)
     processed_data = [[] for _ in range(len(examples))]
-    print len(processed_data)
 
     if self.meta[attribute]["type"] == "numeric":
       subtrees = [[]]*2
+      subtrees[0] = [[]]*len(examples)
+      subtrees[1] = [[]]*len(examples)
       for i in range(len(examples[0])):
         if examples[self.meta[attribute]["index"]][i] <= splits[0]:
-          subtrees[0].append(self.getRow(examples, i))
+          for j in range(len(examples)):
+            subtrees[0][j].append(examples[j][i])
         elif examples[self.meta[attribute]["index"]][i] > splits[0]:
-          subtrees[1].append(self.getRow(examples, i))
+          for j in range(len(examples)):
+            subtrees[1][j].append(examples[j][i])
         else:
-          questions.append(self.getRow(examples, i))
+          for k in range(len(examples)):
+            questions[k].append(examples[k][i])
 
     elif self.meta[attribute]["type"] == "nominal":
-      subtrees = [[]]*len(splits)
+      for i in range(len(splits)):
+        subtrees[i] = [[]]*len(examples)
       for i in range(len(examples[0])):
         for j in range(len(splits)):
           if examples[self.meta[attribute]["index"]][i] == splits[j]:
-            subtrees[j].append(self.getRow(examples, i))
+            for k in range(len(examples)):
+              subtrees[j][k].append(examples[k][i])
           elif examples[self.meta[attribute]["index"]][i] == "?":
-            questions.append(self.getRow(examples, i))
+            for k in range(len(examples)):
+              questions[k].append(examples[k][i])
 
     biggestTree = 0
     largestSize = 0
     for i in range(len(subtrees)):
-      if len(subtrees[i]) > largestSize:
-        largestSize = len(subtrees[i])
+      if len(subtrees[i][0]) > largestSize:
+        largestSize = len(subtrees[i][0])
         biggestTree = i
-    for case in questions:
-      subtrees[biggestTree].append(case)
+    for i in range(len(questions[0])):
+      for k in range(len(questions)):
+        subtrees[biggestTree].append(questions[k][i])
     return subtrees
 
 
@@ -267,7 +275,7 @@ class DecisionTree:
         binary_0_count += 1
       total_rows += 1
 
-    total_rows = float(total_rows)
+    total_rows = float(total_rows) + EPSILON
 
     positive_probability = (binary_1_count/total_rows)
     negative_probability = (binary_0_count/total_rows)
