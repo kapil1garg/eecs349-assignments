@@ -21,6 +21,8 @@ class DecisionTree:
         if self.meta[att]["type"] == "binary":
             self.binary_index = self.meta[att]["index"]
 
+    self.preprocessing()
+
   def preprocessing(self):
     """Removes any unclassified instances from the training data and validation data"""
     processed_data = [[] for _ in range(len(self.data))]
