@@ -198,7 +198,7 @@ class DecisionTree:
         biggestTree = i
     for i in range(len(questions[0])):
       for k in range(len(questions)):
-        subtrees[biggestTree].append(questions[k][i])
+        subtrees[biggestTree][k].append(questions[k][i])
     return subtrees
 
 
