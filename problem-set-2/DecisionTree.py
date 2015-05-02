@@ -32,17 +32,45 @@ class DecisionTree:
           processed_data[j].append(self.data[j][i])
     self.data = processed_data
 
-  def treeMaker():
+    # Add min, max, range
+    for att in self.meta:
+      if self.meta[att]["type"] == "numeric":
+        att_index = self.meta[att]["index"]
+
+        min_val = 0
+        max_val = 0
+        counter = 0
+        while min_val == 0:
+          if self.data[att_index][counter] != "?":
+            min_val = self.data[att_index][counter]
+            max_val = self.data[att_index][counter]
+          counter += 1
+
+        for i in self.data[att_index]:
+            if i != "?":
+              if i < min_val:
+                min_val = i
+              elif i > max_val: 
+                max_val = i
+        stat_vector = [float(min_val), float(max_val), float(max_val) - float(min_val)] # min, max, range
+        self.meta[att]["stats"] = stat_vector
+
+
+
+  def treeMaker(self):
     """Creates the tree
 
     Returns:
         dt (list): the complete decision tree (also stores this value in dt)
     """
+    dt = self.DTL(self.data, self.meta)
+    print dt
+    return dt
+
     #dt = DTL(data, meta)
     #if dt:
     #   dt = prune(dt)
     #return dt
-    pass
 
   def DTL(self, examples, attributes, default = None):
     """Builds a decision tree recursively
@@ -57,20 +85,19 @@ class DecisionTree:
     """
     if len(examples[0]) == 0:
       return default
-    elif sameClass(examples[self.binary_index]):
+    elif self.sameClass(examples[self.binary_index]):
       return examples[self.binary_index][0]
-    elif len(attribute) == 0:
-      return mode(examples[self.binary_index])
+    elif len(attributes) == 0:
+      return self.mode(examples[self.binary_index])
     else:
-      bestAtt, bestSplits = chooseAttribute(examples, attributes)
-      split_examples = splitData(examples, bestAtt, bestSplits)
+      bestAtt, bestSplits = self.chooseAttribute(examples, attributes)
+      split_examples = self.splitData(examples, bestAtt, bestSplits)
 
-      tree = TreeElement(bestAtt)
+      tree = TreeElement.TreeElement(bestAtt)
       self.exclude.append(bestAtt)
 
-      for split_index in range(len(bestSplits)): 
-        selected_examples = split_examples[split_index]
-        subtree = DTL(selected_examples, [att for att in attributes if att not in self.exclude], mode(examples[binary_index]))
+      for split_index in split_examples:
+        subtree = self.DTL(split_index, [att for att in attributes if att not in self.exclude], mode(examples[binary_index]))
         tree.add_branch(TreeElement(subtrees))
       return tree
     
@@ -123,25 +150,23 @@ class DecisionTree:
     processed_data = [[] for _ in range(len(examples))]
 
     if self.meta[attribute]["type"] == "numeric":
-      subtrees[0] = []
-      subtrees[1] = []
+      subtrees = [[]]*2
       for i in range(len(examples[0])):
-        if examples[self.meta[attribute][index]][i] <= splits[0]:
-          subtrees[0].append(case)
-        elif examples[self.meta[attribute][index]][i] > splits[0]:
-          subtrees[1].append(case)
+        if examples[self.meta[attribute]["index"]][i] <= splits[0]:
+          subtrees[0].append(self.getRow(examples, i))
+        elif examples[self.meta[attribute]["index"]][i] > splits[0]:
+          subtrees[1].append(self.getRow(examples, i))
         else:
-          questions.append(case)
+          questions.append(self.getRow(examples, i))
 
     elif self.meta[attribute]["type"] == "nominal":
-      for i in range(len(splits)):
-        subtrees[i] = []
+      subtrees = [[]]*len(splits)
       for i in range(len(examples[0])):
         for j in range(len(splits)):
-          if examples[self.meta[attribute][index]][i] == splits[j]:
-            subtrees[j].append(case)
-          elif exampes[self.meta[attribute][index][i] == "?"]:
-            questions.append(case)
+          if examples[self.meta[attribute]["index"]][i] == splits[j]:
+            subtrees[j].append(self.getRow(examples, i))
+          elif examples[self.meta[attribute]["index"]][i] == "?":
+            questions.append(self.getRow(examples, i))
 
     biggestTree = 0
     largestSize = 0
@@ -155,9 +180,18 @@ class DecisionTree:
     return subtrees
 
 
-      
-  #TODO: WRITE METADATALISTS FOR NOMINAL VALUES, AND CALL IT "values" (and numeric- at least ranges would     be nice; max, min; call it "stats"; stats[0] = min, stats[1] = max, stats[2] = range)  (Kapil)
-  #TODO: WRITE GAIN(examples, attribute, value). This should split data and caluclate the right half of that equation (DONT INCLUDE THE NEGATIVE SIGN)
+  def getRow(self, examples, numRow):
+    """Returns the row in examples
+
+    Returns:
+      list[]: the row from examples
+    """
+
+    row = []
+    for att in examples:
+      row.append(att[numRow])
+
+    return row
 
   def chooseAttribute(self, examples, attributes):
     """Chooses best attribute to split on
@@ -171,26 +205,26 @@ class DecisionTree:
         number bestSplits: the lits of best splits for bestAt
     """
     #for each attribute -- calculate entropy at multiple points, compare them all together to find smallest
-    gains = []
-    splits = []
+    gains = [[]]*len(attributes)
+    splits = [[]]*len(attributes)
     #Set each value to be an array itself
-    for i in range(len(attributes)):
-      gains[i] = []
-      splits[i] = []
+    names = []*len(attributes)
+
     counter = 0
     for attribute in attributes:
       if self.meta[attribute]["type"] == "nominal":
         rowcount = 0
-        for value in self.meta[attribute][values]:
-          splits[counter][rowcount] = value
+        for value in self.meta[attribute]:#[values]:
+          splits[counter].append(value)
           rowcount += 1
-        gains[counter] = gain(examples, attribute, splits[counter])
+        gains[counter] = self.gain(examples, attribute, splits[counter])
       elif self.meta[attribute]["type"] == "numeric":
         rowcount = 0
-        midpoint = (self.meta[attribute][stats][2] / 2) + self.meta[attribute][stats][0]; 
-        splits[counter][rowcount] = midpoint
-        gains[counter] = gain(examples, attribute, splits[counter])
+        midpoint = (self.meta[attribute]["stats"][2] / 2) + self.meta[attribute]["stats"][0]; 
+        splits[counter].append(midpoint)
+        gains[counter] = self.gain(examples, attribute, splits[counter])
         rowcount += 1
+      names.append(attribute)
       counter += 1
     
     maxGain = 0
@@ -201,13 +235,13 @@ class DecisionTree:
         maxGain = gains[counter]
         maxOuterKey = counter
       counter += 1
-    
-    bestAtt = attributes[maxOuterKey]
+
+    bestAtt = names[maxOuterKey]
     bestSplits = splits[maxOuterKey]
     return bestAtt, bestSplits
                   
 
-  EPSILON = math.exp(-100) # must be added to avoid issues with log(0)
+  
   def entropy(self, classification):
     """Calculate entropy of given att/spl
     
@@ -217,6 +251,7 @@ class DecisionTree:
     Returns:
         float: entropy of the attribute at the split
     """
+    EPSILON = math.exp(-100) # must be added to avoid issues with log(0)
     binary_1_count = 0
     binary_0_count = 0
     total_rows = 0
@@ -246,7 +281,7 @@ class DecisionTree:
     Returns:
       (float): gain acquired from splitting on attribute  
     """
-    split_examples = splitData(examples, attribute, splits)
+    split_examples = self.splitData(examples, attribute, splits)
     all_examples = []
     all_count = 0
     total_gain = 0
@@ -258,9 +293,9 @@ class DecisionTree:
 
     # split examples and count
     for split in split_examples:
-      total_gain -= (len(split[self.binary_index])/all_count) * entropy(split[self.binary_index])
+      total_gain -= (len(split[self.binary_index])/all_count) * self.entropy(split[self.binary_index])
 
-    total_gain += entropy(all_examples)
+    total_gain += self.entropy(all_examples)
     return total_gain
 
   def sort_attributes(self, attribute, output):
