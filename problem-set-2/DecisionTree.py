@@ -15,11 +15,12 @@ class DecisionTree:
     self.data = tempdata
     self.meta = tempmeta
     self.dt = []
-    self.exclude = [] # TODO: THIS WILL BE USED TO HOLD ALL ATTRIBUTES ALREADY CHECKED
+    # TODO: THIS WILL BE USED TO HOLD ALL ATTRIBUTES ALREADY CHECKED
     
     for att in self.meta:
         if self.meta[att]["type"] == "binary":
             self.binary_index = self.meta[att]["index"]
+            self.exclude = [att]
 
     self.preprocessing()
 
@@ -96,8 +97,14 @@ class DecisionTree:
       tree = TreeElement.TreeElement(bestAtt)
       self.exclude.append(bestAtt)
 
+      print self.exclude
+      #useAtts = []
+      #for att in attributes:
+      #  if self.exclude[att] == False:
+      #    useAtts.append(att)
+
       for split_index in split_examples:
-        subtree = self.DTL(split_index, [att for att in attributes if att not in self.exclude], mode(examples[binary_index]))
+        subtree = self.DTL(split_index, [att for att in attributes if att not in self.exclude], self.mode(examples[self.binary_index]))
         tree.add_branch(TreeElement(subtrees))
       return tree
     
@@ -176,7 +183,6 @@ class DecisionTree:
         biggestTree = i
     for case in questions:
       subtrees[biggestTree].append(case)
-    
     return subtrees
 
 
@@ -205,13 +211,13 @@ class DecisionTree:
         number bestSplits: the lits of best splits for bestAt
     """
     #for each attribute -- calculate entropy at multiple points, compare them all together to find smallest
-    gains = [[]]*len(attributes)
-    splits = [[]]*len(attributes)
+    gains = [[]]*len([att for att in attributes if att not in self.exclude])
+    splits = [[]]*len([att for att in attributes if att not in self.exclude])
     #Set each value to be an array itself
-    names = []*len(attributes)
+    names = []*len([att for att in attributes if att not in self.exclude])
 
     counter = 0
-    for attribute in attributes:
+    for attribute in [att for att in attributes if att not in self.exclude]:
       if self.meta[attribute]["type"] == "nominal":
         rowcount = 0
         for value in self.meta[attribute]:#[values]:
@@ -287,8 +293,9 @@ class DecisionTree:
     total_gain = 0
 
     # total examples and count
+    print len(split_examples[0])
     for split in split_examples:
-      all_examples += split[self.binary_index]
+      all_examples.append(split[self.binary_index])
     all_count = len(all_examples)
 
     # split examples and count
