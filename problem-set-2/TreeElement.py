@@ -9,5 +9,8 @@ class TreeElement(object):
         self.data = data
         self.branches = []
 
+    def __str__(self):
+        return self.data
+
     def add_branch(self, obj):
         self.branches.append(obj)
