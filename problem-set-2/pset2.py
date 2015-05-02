@@ -9,6 +9,6 @@ meta_reader = meta.MetaReader("./data/bmeta.csv")
 meta_data = meta_reader.parseMetaData()
 
 thisTree = DT.DecisionTree(training_data, meta_data)
-tree = thisTree.treeMaker()
+#tree = thisTree.treeMaker()
 
 print tree.branches
