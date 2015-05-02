@@ -155,6 +155,7 @@ class DecisionTree:
     subtrees = []
     questions = []
     processed_data = [[] for _ in range(len(examples))]
+    print len(processed_data)
 
     if self.meta[attribute]["type"] == "numeric":
       subtrees = [[]]*2
@@ -219,17 +220,14 @@ class DecisionTree:
     counter = 0
     for attribute in [att for att in attributes if att not in self.exclude]:
       if self.meta[attribute]["type"] == "nominal":
-        rowcount = 0
         for value in self.meta[attribute]:#[values]:
           splits[counter].append(value)
-          rowcount += 1
         gains[counter] = self.gain(examples, attribute, splits[counter])
+
       elif self.meta[attribute]["type"] == "numeric":
-        rowcount = 0
         midpoint = (self.meta[attribute]["stats"][2] / 2) + self.meta[attribute]["stats"][0]; 
         splits[counter].append(midpoint)
         gains[counter] = self.gain(examples, attribute, splits[counter])
-        rowcount += 1
       names.append(attribute)
       counter += 1
     
@@ -293,7 +291,7 @@ class DecisionTree:
     total_gain = 0
 
     # total examples and count
-    print len(split_examples[0])
+    # print len(split_examples[0])
     for split in split_examples:
       all_examples.append(split[self.binary_index])
     all_count = len(all_examples)
