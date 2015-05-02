@@ -1,5 +1,6 @@
 import math
 import TreeElement
+import copy
 
 class DecisionTree:
   """Creates and stores a decision tree
@@ -91,11 +92,13 @@ class DecisionTree:
     elif len(attributes) == 0:
       return self.mode(examples[self.binary_index])
     else:
-      bestAtt, bestSplits = self.chooseAttribute(examples, attributes)
-      split_examples = self.splitData(examples, bestAtt, bestSplits)
+      bestAtt, bestSplits = self.chooseAttribute(copy.deepcopy(examples), copy.deepcopy(attributes))
+      split_examples = self.splitData(copy.deepcopy(examples), copy.deepcopy(bestAtt), copy.deepcopy(bestSplits))
 
-      tree = TreeElement.TreeElement(bestAtt)
-      self.exclude.append(bestAtt)
+      print bestAtt
+
+      tree = TreeElement.TreeElement(copy.deepcopy(bestAtt))
+      self.exclude.append(copy.deepcopy(bestAtt))
 
       print self.exclude
       #useAtts = []
@@ -104,8 +107,12 @@ class DecisionTree:
       #    useAtts.append(att)
 
       for split_index in split_examples:
-        subtree = self.DTL(split_index, [att for att in attributes if att not in self.exclude], self.mode(examples[self.binary_index]))
+        print "Run for each split_example"
+        print len(split_index[0])
+        subtree = self.DTL(copy.deepcopy(split_index), [copy.deepcopy(att) for att in attributes if att not in self.exclude], self.mode(copy.deepcopy(examples[self.binary_index])))
+        print " You made a subtree"
         tree.add_branch(TreeElement.TreeElement(subtree))
+        print " You added the subtree"
       return tree
     
   # DONE
