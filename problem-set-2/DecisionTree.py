@@ -91,18 +91,18 @@ class DecisionTree:
     """
     print attributes
     if len(examples[0]) == 0:
-      print "No examples: ",
-      print default
+      # print "No examples: ",
+      # print default
       return default
     elif self.sameClass(examples[self.binary_index]):
-      print "Is same class: ", 
+      # print "Is same class: ", 
       #print examples[self.binary_index][0],
-      print attributes,
-      print examples
+      # print attributes,
+      # print examples
       return examples[self.binary_index][0]
     elif len(attributes) == 0:
-      print "No attributes: ",
-      print self.mode(examples[self.binary_index])
+      # print "No attributes: ",
+      # print self.mode(examples[self.binary_index])
       return self.mode(examples[self.binary_index])
     else:
       bestAtt, bestSplits = self.chooseAttribute(examples, attributes)
@@ -112,10 +112,10 @@ class DecisionTree:
         string_greater = ">" + str(bestSplits)
         bestSplits = [string_lessequal, string_greater]
 
-      print "Best Splits: ",
-      print bestSplits
-      print "Split exampels length: ",
-      print len(split_examples)
+      #print "Best Splits: ",
+      #print bestSplits
+      #print "Split exampels length: ",
+      #print len(split_examples)
 
       tree = {bestAtt: {}}
       # tree.set_splits(bestSplits)
@@ -154,7 +154,6 @@ class DecisionTree:
             num1 += 1
         else:
             num0 += 1
-    print "Mode calculations: 0: " + str(num0) + " 1: "+ str(num1)
     return 0 if (num0 > num1) else 1
 
   # DONE
@@ -290,8 +289,8 @@ class DecisionTree:
       names.append(attribute)
       counter += 1
 
-    print gains
-    print splits
+    #print gains
+    #print splits
     
     maxGain = 0
     maxOuterKey = 0
@@ -361,7 +360,7 @@ class DecisionTree:
       total_gain -= (split[self.binary_index].count("1")/float(all_count)) * self.entropy(split[self.binary_index])
 
     total_gain += self.entropy(all_examples)
-    print "Gain: " + str(total_gain)
+    #print "Gain: " + str(total_gain)
     return total_gain
 
   def sort_attributes(self, attribute, output):
