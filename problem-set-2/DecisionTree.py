@@ -196,9 +196,18 @@ class DecisionTree:
       if len(subtrees[i][0]) > largestSize:
         largestSize = len(subtrees[i][0])
         biggestTree = i
+
+
+
+    print "splitData on: " + attribute
+    print "Largest Tree Size: " + str(largestSize)
+    print "subtree size before ?: " + str(len(subtrees[0][1]))
+
     for i in range(len(questions[0])):
       for k in range(len(questions)):
         subtrees[biggestTree][k].append(questions[k][i])
+
+    print "subtree size after ?: " + str(len(subtrees[0][0]))
     return subtrees
 
 
@@ -228,6 +237,7 @@ class DecisionTree:
     """
     #for each attribute -- calculate entropy at multiple points, compare them all together to find smallest
     gains = [[]]*len([att for att in attributes if att not in self.exclude])
+
     splits = [[]]*len([att for att in attributes if att not in self.exclude])
     #Set each value to be an array itself
     names = []*len([att for att in attributes if att not in self.exclude])
@@ -237,12 +247,16 @@ class DecisionTree:
       if self.meta[attribute]["type"] == "nominal":
         for value in self.meta[attribute]:#[values]:
           splits[counter].append(value)
-        gains[counter] = self.gain(examples, attribute, splits[counter])
+        temp = self.gain(examples, attribute, splits[counter])
+        print temp
+        gains[counter] = temp
 
       elif self.meta[attribute]["type"] == "numeric":
         midpoint = (self.meta[attribute]["stats"][2] / 2) + self.meta[attribute]["stats"][0]; 
         splits[counter].append(midpoint)
-        gains[counter] = self.gain(examples, attribute, splits[counter])
+        temp = self.gain(examples, attribute, splits[counter])
+        print temp
+        gains[counter] = temp
       names.append(attribute)
       counter += 1
     
@@ -310,12 +324,15 @@ class DecisionTree:
     for split in split_examples:
       all_examples.append(split[self.binary_index])
     all_count = len(all_examples)
+    # print all_examples
+    # print all_count
 
     # split examples and count
     for split in split_examples:
       total_gain -= (len(split[self.binary_index])/all_count) * self.entropy(split[self.binary_index])
 
     total_gain += self.entropy(all_examples)
+    print total_gain
     return total_gain
 
   def sort_attributes(self, attribute, output):
