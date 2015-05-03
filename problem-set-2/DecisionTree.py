@@ -34,7 +34,7 @@ class DecisionTree:
           processed_data[j].append(self.data[j][i])
     self.data = processed_data
 
-    # Add min, max, range
+    # Add min, max, range for numeric attributes
     for att in self.meta:
       if self.meta[att]["type"] == "numeric":
         att_index = self.meta[att]["index"]
@@ -57,7 +57,16 @@ class DecisionTree:
         stat_vector = [float(min_val), float(max_val), float(max_val) - float(min_val)] # min, max, range
         self.meta[att]["stats"] = stat_vector
 
+    # Add values for nominal attributes
+    for att in self.meta:
+      if self.meta[att]["type"] == "nominal":
+        att_index = self.meta[att]["index"]
+        nominal_values = []
 
+        for i in self.data[att_index]:
+          if i != "?" and not i in nominal_values:
+            nominal_values.append(i)
+        self.meta[att]["values"] = nominal_values
 
   def treeMaker(self):
     """Creates the tree
@@ -160,39 +169,51 @@ class DecisionTree:
     """
 
     subtrees = []
+    print subtrees
+    print "Example length: " + str(len(examples))
     questions = [[]] * len(examples)
+    attribute_index = self.meta[attribute]["index"]
 
     if self.meta[attribute]["type"] == "numeric":
       print "    numeric"
+      subtrees = [[]] * 2
       lessThan = [[]] * len(examples)
       greaterThan = [[]] * len(examples)
       for row in range(len(examples[0])): #for each row/element in examples
-        if examples[self.meta[attribute]["index"]][row] <= splits[0]:
+        if examples[attribute_index][row] == "?":
+          print "? checked"
+          for element in range(len(examples)): #for each column/attribute in examples
+            questions[element].append(copy.deepcopy(examples[element][row]))
+        elif examples[attribute_index][row] <= splits[0]:
           for element in range(len(examples)): #for each column/attribute in examples
             lessThan[element].append(copy.deepcopy(examples[element][row]))
-        elif examples[self.meta[attribute]["index"]][row] > splits[0]:
+        elif examples[attribute_index][row] > splits[0]:
           for element in range(len(examples)): #for each column/attribute in examples
             greaterThan[element].append(copy.deepcopy(examples[element][row]))
-      subtrees.append(lessThan)
-      subtrees.append(greaterThan)
+      subtrees[0] = lessThan
+      subtrees[1] = greaterThan
+      print len(subtrees)
 
     elif self.meta[attribute]["type"] == "nominal":
       print "    nominal"
+      counter = 0
+      subtrees = [[]] * len(splits)
       for split in splits: #for each split
         tempTree = [[]] * len(examples)
         for row in range(len(examples[0])): #for each row/element in examples
-          if examples[self.meta[attribute]["index"]][row] == split: #THIS IS NEVER TRUE
+          if examples[attribute_index][row] == split: #THIS IS NEVER TRUE
             for element in range(len(examples)): #for each column/attribute in examples
               tempTree[element].append(copy.deepcopy(examples[element][row]))
-          elif examples[self.meta[attribute]["index"]][row] == "?": #THIS IS TRUE A CRAZY NUMBER OF TIMES
+          elif examples[attribute_index][row] == "?": #THIS IS TRUE A CRAZY NUMBER OF TIMES
+            print "? checked"
             for element in range(len(examples)): #for each column/attribute in examples
               questions[element].append(copy.deepcopy(examples[element][row]))
               #MAYBE I HAVE TO CHECK WITH THE SELF. THING FOR ATTRIBUTES INSTEAD OF USING ELEMENT??
-        subtrees.append(tempTree)
-        print " HERE COMES THE TREE"
-        print len(questions[0])
-
-
+        subtrees[counter] = tempTree
+        counter += 1
+    
+    print "Length of subtree: " + str(len(subtrees[0]))   
+    print "Length of questions: " + str(len(questions[0]))
     print "          Only once per runthrough"
     biggestTree = 0
     largestSize = 0
@@ -201,6 +222,7 @@ class DecisionTree:
         largestSize = len(subtrees[i][0])
         biggestTree = i
         print i
+        print len(subtrees[i][0])
         print len(subtrees[i][1])
     for i in range(len(questions[0])):
       for k in range(len(questions)):
@@ -300,9 +322,7 @@ class DecisionTree:
     counter = 0
     for attribute in [att for att in attributes if att not in self.exclude]:
       if self.meta[attribute]["type"] == "nominal":
-        for value in self.meta[attribute]:#[values]:
-          splits[counter].append(value)
-        gains[counter] = self.gain(examples, attribute, splits[counter])
+        gains[counter] = self.gain(examples, attribute, self.meta[attribute]["values"])
 
       elif self.meta[attribute]["type"] == "numeric":
         midpoint = (self.meta[attribute]["stats"][2] / 2) + self.meta[attribute]["stats"][0]; 
