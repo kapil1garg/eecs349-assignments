@@ -104,7 +104,8 @@ class DecisionTree:
       bestAtt, bestSplits = self.chooseAttribute(copy.deepcopy(examples), copy.deepcopy(attributes))
       split_examples = self.splitData(copy.deepcopy(examples), copy.deepcopy(bestAtt), copy.deepcopy(bestSplits))
 
-      tree = TreeElement.TreeElement(copy.deepcopy(bestAtt))
+      #tree = TreeElement.TreeElement(copy.deepcopy(bestAtt))
+      tree = {bestAtt:{}}
       self.exclude.append(copy.deepcopy(bestAtt))
 
      #useAtts = []
@@ -112,12 +113,12 @@ class DecisionTree:
       #  if self.exclude[att] == False:
       #    useAtts.append(att)
 
-      for split_index in split_examples:
+      for split_index in range(len(split_examples)):
         print "Run for each split_example"
         #print len(split_index[0])
-        subtree = self.DTL(copy.deepcopy(split_index), [copy.deepcopy(att) for att in attributes if att not in self.exclude], self.mode(copy.deepcopy(examples[self.binary_index])))
+        subtree = self.DTL(split_examples[split_index], [att for att in attributes if att not in self.exclude], self.mode(examples[self.binary_index]))
         print " You made a subtree"
-        tree.add_branch(TreeElement.TreeElement(copy.deepcopy(subtree)))
+        tree[bestAtt][bestSplits[split_index]] = subtree
         print " You added the subtree"
         print tree
       return tree
@@ -181,7 +182,6 @@ class DecisionTree:
       greaterThan = [[]] * len(examples)
       for row in range(len(examples[0])): #for each row/element in examples
         if examples[attribute_index][row] == "?":
-          print "? checked"
           for element in range(len(examples)): #for each column/attribute in examples
             questions[element].append(copy.deepcopy(examples[element][row]))
         elif examples[attribute_index][row] <= splits[0]:
@@ -205,7 +205,6 @@ class DecisionTree:
             for element in range(len(examples)): #for each column/attribute in examples
               tempTree[element].append(copy.deepcopy(examples[element][row]))
           elif examples[attribute_index][row] == "?": #THIS IS TRUE A CRAZY NUMBER OF TIMES
-            print "? checked"
             for element in range(len(examples)): #for each column/attribute in examples
               questions[element].append(copy.deepcopy(examples[element][row]))
               #MAYBE I HAVE TO CHECK WITH THE SELF. THING FOR ATTRIBUTES INSTEAD OF USING ELEMENT??
