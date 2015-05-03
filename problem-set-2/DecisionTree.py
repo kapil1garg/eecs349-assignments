@@ -16,12 +16,12 @@ class DecisionTree:
     self.data = tempdata
     self.meta = tempmeta
     self.dt = []
-    # TODO: THIS WILL BE USED TO HOLD ALL ATTRIBUTES ALREADY CHECKED
     
     for att in self.meta:
         if self.meta[att]["type"] == "binary":
             self.binary_index = self.meta[att]["index"]
-            self.exclude = [att]
+            # self.exclude = [att]
+            self.binary_att = att
 
     self.preprocessing()
 
@@ -74,54 +74,9 @@ class DecisionTree:
     Returns:
         dt (list): the complete decision tree (also stores this value in dt)
     """
-    dt = self.DTL(self.data, self.meta)
+    attributes = [att for att in self.meta.keys() if att != self.binary_att]
+    dt = self.DTL(self.data, attributes)
     return dt
-
-    #dt = DTL(data, meta)
-    #if dt:
-    #   dt = prune(dt)
-    #return dt
-
-  # def DTL(self, examples, attributes, default = None):
-  #   """Builds a decision tree recursively
-
-  #   Args: 
-  #     examples (list of list): list of lists containing all data
-  #     attribute (string): attribute to split on and calculate gain
-  #     default (obj): value to use when examples are empty, None if no value specified
-
-  #   Returns:
-  #       TreeElement: the filled decision tree
-  #   """
-  #   if len(examples[0]) == 0:
-  #     return default
-  #   elif self.sameClass(examples[self.binary_index]):
-  #     return TreeElement.TreeElement(examples[self.binary_index][0])
-  #   elif len(attributes) == 0:
-  #     return TreeElement.TreeElement(self.mode(examples[self.binary_index]))
-  #   else:
-  #     bestAtt, bestSplits = self.chooseAttribute(copy.deepcopy(examples), copy.deepcopy(attributes))
-  #     #print bestAtt
-  #     split_examples = self.splitData(copy.deepcopy(examples), copy.deepcopy(bestAtt), copy.deepcopy(bestSplits))
-
-  #     tree = TreeElement.TreeElement(copy.deepcopy(bestAtt))
-  #     tree.set_splits(bestSplits)
-  #     self.exclude.append(copy.deepcopy(bestAtt))
-
-  #    #useAtts = []
-  #     #for att in attributes:
-  #     #  if self.exclude[att] == False:
-  #     #    useAtts.append(att)
-
-  #     for split_index in split_examples:
-  #      # print "Run for each split_example"
-  #       #print len(split_index[0])
-  #       subtree = self.DTL(copy.deepcopy(split_index), [copy.deepcopy(att) for att in attributes if att not in self.exclude], self.mode(copy.deepcopy(examples[self.binary_index])))
-  #       #print " You made a subtree"
-  #       tree.add_branch(subtree)
-  #       #print " You added the subtree"
-  #       #print tree
-  #     return tree
 
   def DTL(self, examples, attributes, default = None):
     """Builds a decision tree recursively
@@ -134,6 +89,7 @@ class DecisionTree:
     Returns:
         TreeElement: the filled decision tree
     """
+    print attributes
     if len(examples[0]) == 0:
       print "No examples: ",
       print default
@@ -163,7 +119,7 @@ class DecisionTree:
 
       tree = {bestAtt: {}}
       # tree.set_splits(bestSplits)
-      self.exclude.append(bestAtt)
+      # self.exclude.append(bestAtt)
 
      #useAtts = []
       #for att in attributes:
@@ -173,7 +129,7 @@ class DecisionTree:
       for split_index in range(len(split_examples)):
        # print "Run for each split_example"
         #print len(split_index[0])
-        subtree = self.DTL(split_examples[split_index], [att for att in attributes if att not in self.exclude],
+        subtree = self.DTL(split_examples[split_index], [att for att in attributes if att != bestAtt],
          self.mode(examples[self.binary_index]))
         #print " You made a subtree"
         tree[bestAtt][bestSplits[split_index]] = subtree
@@ -248,30 +204,13 @@ class DecisionTree:
             greaterThan[element].append(copy.deepcopy(examples[element][row]))
       subtrees[0] = copy.deepcopy(lessThan)
       subtrees[1] = copy.deepcopy(greaterThan)
-
-    # elif self.meta[attribute]["type"] == "nominal":
-    #   print "    nominal"
-    #   counter = 0
-    #   subtrees = [[]] * len(splits)
-    #   for split in splits: #for each split
-    #     tempTree = [[]] * len(examples)
-    #     for row in range(len(examples[0])): #for each row/element in examples
-    #       if examples[attribute_index][row] == split: #THIS IS NEVER TRUE
-    #         for element in range(len(examples)): #for each column/attribute in examples
-    #           tempTree[element].append(copy.deepcopy(examples[element][row]))
-    #       elif examples[attribute_index][row] == "?": #THIS IS TRUE A CRAZY NUMBER OF TIMES
-    #         for element in range(len(examples)): #for each column/attribute in examples
-    #           questions[element].append(copy.deepcopy(examples[element][row]))
-    #           #MAYBE I HAVE TO CHECK WITH THE SELF. THING FOR ATTRIBUTES INSTEAD OF USING ELEMENT??
-    #     subtrees[counter] = tempTree
-    #     counter += 1
     
     elif self.meta[attribute]["type"] == "nominal":
       print "    nominal"
       counter = 0
       subtrees = [[] for _ in range(len(splits))]
       for split in splits:
-        tempTree = [[]] * len(examples)
+        tempTree = [[] for _ in range(len(examples))]
         subtrees[counter] = copy.deepcopy(tempTree)
         counter += 1
       counter = 0
@@ -305,64 +244,6 @@ class DecisionTree:
     #print "subtree size after ?: " + str(len(subtrees))
     return subtrees
 
-
-  # def splitData(self, examples, attribute, splits):
-  #   """Makes sublists with data matching attribute
-
-  #   Args: 
-  #     examples (list of list): list of lists containing all data
-  #     attribute (string): attribute to split on
-  #     splits (list): items to split examples on
-    
-  #   Returns:
-  #       list[]: the data fitting along the split
-  #       list[]: the data fitting outside the split
-  #   """
-  #   subtrees = [[]]*len(splits)
-  #   questions = [[]]*len(examples)
-  #   processed_data = [[] for _ in range(len(examples))]
-
-  #   if self.meta[attribute]["type"] == "numeric":
-  #     subtrees = [[]]*2
-  #     subtrees[0] = [[]]*len(examples)
-  #     subtrees[1] = [[]]*len(examples)
-  #     for i in range(len(examples[0])):
-  #       if examples[self.meta[attribute]["index"]][i] <= splits[0]:
-  #         for j in range(len(examples)):
-  #           subtrees[0][j].append(examples[j][i])
-  #       elif examples[self.meta[attribute]["index"]][i] > splits[0]:
-  #         for j in range(len(examples)):
-  #           subtrees[1][j].append(examples[j][i])
-  #       else:
-  #         for k in range(len(examples)):
-  #           questions[k].append(examples[k][i])
-
-  #   elif self.meta[attribute]["type"] == "nominal":
-  #     for i in range(len(splits)):
-  #       subtrees[i] = [[]]*len(examples)
-  #     for i in range(len(examples[0])):
-  #       for j in range(len(splits)):
-  #         if examples[self.meta[attribute]["index"]][i] == splits[j]:
-  #           for k in range(len(examples)):
-  #             subtrees[j][k].append(examples[k][i])
-  #         elif examples[self.meta[attribute]["index"]][i] == "?":
-  #           for k in range(len(examples)):
-  #             questions[k].append(examples[k][i])
-
-  #   biggestTree = 0
-  #   largestSize = 0
-  #   for i in range(len(subtrees)):
-  #     if len(subtrees[i][0]) > largestSize:
-  #       largestSize = len(subtrees[i][0])
-  #       biggestTree = i
-  #       print i
-  #       print len(subtrees[i][0])
-  #   for i in range(len(questions[0])):
-  #     for k in range(len(questions)):
-  #       subtrees[biggestTree][k].append(questions[k][i])
-  #   return subtrees
-
-
   def getRow(self, examples, numRow):
     """Returns the row in examples
 
@@ -388,13 +269,16 @@ class DecisionTree:
         number bestSplits: the lits of best splits for bestAt
     """
     #for each attribute -- calculate entropy at multiple points, compare them all together to find smallest
-    gains = [[] for _ in range(len([att for att in attributes if att not in self.exclude]))]
-    splits = [[] for _ in range(len([att for att in attributes if att not in self.exclude]))]
+    #gains = [[] for _ in range(len([att for att in attributes if att not in self.exclude]))]
+    #splits = [[] for _ in range(len([att for att in attributes if att not in self.exclude]))]
+    gains = [[] for _ in range(len(attributes))]
+    splits = [[] for _ in range(len(attributes))]
     #Set each value to be an array itself
     names = []
 
     counter = 0
-    for attribute in [att for att in attributes if att not in self.exclude]:
+    # for attribute in [att for att in attributes if att not in self.exclude]:
+    for attribute in attributes:
       if self.meta[attribute]["type"] == "nominal":
         gains[counter] = self.gain(examples, attribute, self.meta[attribute]["values"])
         splits[counter] = (self.meta[attribute]["values"]) #IT WORKS WITHOUT THIS LINE, BUT IT REALLY SHOULDN'T
@@ -405,6 +289,9 @@ class DecisionTree:
         gains[counter] = self.gain(examples, attribute, splits[counter])
       names.append(attribute)
       counter += 1
+
+    print gains
+    print splits
     
     maxGain = 0
     maxOuterKey = 0
@@ -418,8 +305,6 @@ class DecisionTree:
     bestAtt = names[maxOuterKey]
     bestSplits = splits[maxOuterKey]
     return bestAtt, bestSplits
-                  
-
   
   def entropy(self, classification):
     """Calculate entropy of given att/spl
@@ -468,12 +353,12 @@ class DecisionTree:
     # total examples and count
     # print len(split_examples[0])
     for split in split_examples:
-      all_examples.append(split[self.binary_index])
+      all_examples += (split[self.binary_index])
     all_count = len(all_examples)
 
     # split examples and count
     for split in split_examples:
-      total_gain -= (len(split[self.binary_index])/all_count) * self.entropy(split[self.binary_index])
+      total_gain -= (split[self.binary_index].count("1")/float(all_count)) * self.entropy(split[self.binary_index])
 
     total_gain += self.entropy(all_examples)
     print "Gain: " + str(total_gain)
@@ -491,7 +376,6 @@ class DecisionTree:
     """
     sorted_tuples = sorted(zip(attribute, output))
     return [att for (att, classification) in sorted_tuples], [classify for (att, classification) in sorted_tuples]
-
 
 
   def prune(self, tree):
