@@ -75,13 +75,53 @@ class DecisionTree:
         dt (list): the complete decision tree (also stores this value in dt)
     """
     dt = self.DTL(self.data, self.meta)
-    print dt
     return dt
 
     #dt = DTL(data, meta)
     #if dt:
     #   dt = prune(dt)
     #return dt
+
+  # def DTL(self, examples, attributes, default = None):
+  #   """Builds a decision tree recursively
+
+  #   Args: 
+  #     examples (list of list): list of lists containing all data
+  #     attribute (string): attribute to split on and calculate gain
+  #     default (obj): value to use when examples are empty, None if no value specified
+
+  #   Returns:
+  #       TreeElement: the filled decision tree
+  #   """
+  #   if len(examples[0]) == 0:
+  #     return default
+  #   elif self.sameClass(examples[self.binary_index]):
+  #     return TreeElement.TreeElement(examples[self.binary_index][0])
+  #   elif len(attributes) == 0:
+  #     return TreeElement.TreeElement(self.mode(examples[self.binary_index]))
+  #   else:
+  #     bestAtt, bestSplits = self.chooseAttribute(copy.deepcopy(examples), copy.deepcopy(attributes))
+  #     #print bestAtt
+  #     split_examples = self.splitData(copy.deepcopy(examples), copy.deepcopy(bestAtt), copy.deepcopy(bestSplits))
+
+  #     tree = TreeElement.TreeElement(copy.deepcopy(bestAtt))
+  #     tree.set_splits(bestSplits)
+  #     self.exclude.append(copy.deepcopy(bestAtt))
+
+  #    #useAtts = []
+  #     #for att in attributes:
+  #     #  if self.exclude[att] == False:
+  #     #    useAtts.append(att)
+
+  #     for split_index in split_examples:
+  #      # print "Run for each split_example"
+  #       #print len(split_index[0])
+  #       subtree = self.DTL(copy.deepcopy(split_index), [copy.deepcopy(att) for att in attributes if att not in self.exclude], self.mode(copy.deepcopy(examples[self.binary_index])))
+  #       #print " You made a subtree"
+  #       tree.add_branch(subtree)
+  #       #print " You added the subtree"
+  #       #print tree
+  #     return tree
 
   def DTL(self, examples, attributes, default = None):
     """Builds a decision tree recursively
@@ -95,34 +135,51 @@ class DecisionTree:
         TreeElement: the filled decision tree
     """
     if len(examples[0]) == 0:
+      print "No examples: ",
+      print default
       return default
     elif self.sameClass(examples[self.binary_index]):
-      return TreeElement.TreeElement(examples[self.binary_index][0])
+      print "Is same class: ", 
+      print examples[self.binary_index][0],
+      print attributes,
+      print examples
+      return examples[self.binary_index][0]
     elif len(attributes) == 0:
-      return TreeElement.TreeElement(self.mode(examples[self.binary_index]))
+      print "No attributes: ",
+      print self.mode(examples[self.binary_index])
+      return self.mode(examples[self.binary_index])
     else:
-      bestAtt, bestSplits = self.chooseAttribute(copy.deepcopy(examples), copy.deepcopy(attributes))
-      #print bestAtt
-      split_examples = self.splitData(copy.deepcopy(examples), copy.deepcopy(bestAtt), copy.deepcopy(bestSplits))
+      bestAtt, bestSplits = self.chooseAttribute(examples, attributes)
+      split_examples = self.splitData(examples, bestAtt, bestSplits)
+      if self.meta[bestAtt]["type"] == "numeric":
+        string_lessequal = "<=" + str(bestSplits)
+        string_greater = ">" + str(bestSplits)
+        bestSplits = [string_lessequal, string_greater]
 
-      tree = TreeElement.TreeElement(copy.deepcopy(bestAtt))
-      tree.set_splits(bestSplits)
-      self.exclude.append(copy.deepcopy(bestAtt))
+      print "Best Splits: ",
+      print bestSplits
+      print "Split exampels length: ",
+      print len(split_examples)
+
+      tree = {bestAtt: {}}
+      # tree.set_splits(bestSplits)
+      self.exclude.append(bestAtt)
 
      #useAtts = []
       #for att in attributes:
       #  if self.exclude[att] == False:
       #    useAtts.append(att)
 
-      for split_index in split_examples:
+      for split_index in range(len(split_examples)):
        # print "Run for each split_example"
         #print len(split_index[0])
-        subtree = self.DTL(copy.deepcopy(split_index), [copy.deepcopy(att) for att in attributes if att not in self.exclude], self.mode(copy.deepcopy(examples[self.binary_index])))
+        subtree = self.DTL(split_examples[split_index], [att for att in attributes if att not in self.exclude],
+         self.mode(examples[self.binary_index]))
         #print " You made a subtree"
-        tree.add_branch(subtree)
-        #print " You added the subtree"
-        #print tree
-      return tree
+        tree[bestAtt][bestSplits[split_index]] = subtree
+        # print " You added the subtree ",
+        # print tree
+    return tree
     
   # DONE
   def mode(self, examples):
@@ -137,11 +194,11 @@ class DecisionTree:
     num0 = 0
     num1 = 0
     for element in examples:
-        if element:
+        if element == "1":
             num1 += 1
         else:
             num0 += 1
-
+    print "Mode calculations: 0: " + str(num0) + " 1: "+ str(num1)
     return 0 if (num0 > num1) else 1
 
   # DONE
@@ -341,7 +398,7 @@ class DecisionTree:
     for attribute in [att for att in attributes if att not in self.exclude]:
       if self.meta[attribute]["type"] == "nominal":
         gains[counter] = self.gain(examples, attribute, self.meta[attribute]["values"])
-        #splits[counter] = (self.meta[attribute]["values"]) #IT WORKS WITHOUT THIS LINE, BUT IT REALLY SHOULDN'T
+        splits[counter] = (self.meta[attribute]["values"]) #IT WORKS WITHOUT THIS LINE, BUT IT REALLY SHOULDN'T
 
       elif self.meta[attribute]["type"] == "numeric":
         midpoint = (self.meta[attribute]["stats"][2] / 2) + self.meta[attribute]["stats"][0]; 

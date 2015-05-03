@@ -11,11 +11,12 @@ meta_data = meta_reader.parseMetaData()
 
 thisTree = DT.DecisionTree(training_data, meta_data)
 tree = thisTree.treeMaker()
+print tree
 
-def printTree(treet):
-	print treet
-	if treet.branches:
-		for b in treet.branches:
-			printTree(b)
+# def printTree(treet):
+# 	print treet
+# 	if treet.branches:
+# 		for b in treet.branches:
+# 			printTree(b)
 
-printTree(tree)
+# printTree(tree)
