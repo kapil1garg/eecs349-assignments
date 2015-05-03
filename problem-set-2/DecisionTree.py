@@ -140,7 +140,7 @@ class DecisionTree:
       return default
     elif self.sameClass(examples[self.binary_index]):
       print "Is same class: ", 
-      print examples[self.binary_index][0],
+      #print examples[self.binary_index][0],
       print attributes,
       print examples
       return examples[self.binary_index][0]
@@ -302,7 +302,6 @@ class DecisionTree:
       for k in range(len(questions)):
         if(len(subtrees)>0):
           subtrees[biggestTree][k].append(questions[k][i])
-
     #print "subtree size after ?: " + str(len(subtrees))
     return subtrees
 
@@ -437,9 +436,9 @@ class DecisionTree:
     total_rows = 0
 
     for i in classification:
-      if i == 1:
+      if i == "1":
         binary_1_count += 1
-      elif i == 0:
+      elif i == "0":
         binary_0_count += 1
       total_rows += 1
 
@@ -477,6 +476,7 @@ class DecisionTree:
       total_gain -= (len(split[self.binary_index])/all_count) * self.entropy(split[self.binary_index])
 
     total_gain += self.entropy(all_examples)
+    print "Gain: " + str(total_gain)
     return total_gain
 
   def sort_attributes(self, attribute, output):
