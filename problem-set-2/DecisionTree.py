@@ -458,9 +458,6 @@ class DecisionTree:
     Returns:
       int accuracy: pruned tree
     """
-    tree = self.dt
-    #TODO: WHEN DESIGNING TREE, IF PRUNING WILL OCCUR, SET ASIDE A PORTION OF EXAMPLES (AT RANDOM) AS VALIDATION SET (1/3RD seems to be a good number)
-
     #Go through the tree (top-bottom?)
     #for each node
       #sum errors (gain) over entire subtree
@@ -474,12 +471,14 @@ class DecisionTree:
     #NEW PLAN BELOW- PROBABLY BETTER
     #if tree is a leaf node
     if not(type(tree) is dict):
-      return
+      #print "Not here"
+      return tree
       #return
     #Get splits/split_examples
+    #print "GOT _____ HERE ______ YAYYYY _______"
     key = tree.keys()[0]
-    print "Tree Keys: ",
-    print tree.keys()
+    # print "Tree Keys: ",
+    # print tree.keys()
     splits = []
     for spl in tree[key].keys():
       if "<=" in spl:
@@ -495,23 +494,36 @@ class DecisionTree:
         #   if spl in self.meta[att]["values"]:
         #     splits.append(spl)
         #     break
-
+    newTree = {tree.keys()[0]: {}}
+    #tree[bestAtt][bestSplits[split_index]] = subtree
     split_examples = self.splitData(examples, key, splits)
     #for each branch in tree
     split_index = 0
+    #print len(tree[key].keys())
     for spl in tree[key].keys():
-      self.prune(tree[key][spl], split_examples[split_index])
+      subTree = self.prune(tree[key][spl], split_examples[split_index])
+      newTree[key][splits[split_index]]= subTree
+      print "Sub: ____________________________________________"
+      print subTree
       split_index += 1
       #totalAccuracy += prune(subtree, split_examples[i])
     #clasification = classify(tree, examples)
-    classification = self.classify(tree, examples)
+    print "NEW: //////////////////////////////////////////"
+    print newTree
+    classification = self.classify(newTree, examples)
     thisAccuracy = self.accuracy(examples, classification)
-    thisMode = self.mode(examples)
+    thisMode = self.mode(examples[self.binary_index])
     modeAccuracy = self.accuracy(examples, thisMode)
+    # print "Accuracy: ",
+    # print thisAccuracy,
+    # print "     Mode Accuracy: ",
+    # print modeAccuracy
     if modeAccuracy > thisAccuracy:
       #turn this tree into a leaf with value of thisMode
-      tree = str(thisMode)
-    return 
+      print "Mode: ",
+      print thisMode
+      newTree = str(thisMode)
+    return newTree
 
 
 
