@@ -275,7 +275,7 @@ class DecisionTree:
         splits[counter] = (self.meta[attribute]["values"]) #IT WORKS WITHOUT THIS LINE, BUT IT REALLY SHOULDN'T
 
       elif self.meta[attribute]["type"] == "numeric":
-        midpoint = (self.meta[attribute]["stats"][2] / 2) + self.meta[attribute]["stats"][0]; 
+        midpoint = (self.meta[attribute]["stats"][0] + self.meta[attribute]["stats"][1])/2
         splits[counter] = (midpoint)
         gains[counter] = self.gain(examples, attribute, splits[counter])
       names.append(attribute)
@@ -347,8 +347,10 @@ class DecisionTree:
     # split examples and count
     for split in split_examples:
       total_split_gain += (split[self.binary_index].count("1")/float(all_count)) * self.entropy(split[self.binary_index])
-    #print "Gain: " + str(total_gain)
+    
     total_gain = total_gain - total_split_gain
+    if total_gain <=  0.01:
+      print "Gain: " + str(total_gain)
     return total_gain
 
   def sort_attributes(self, attribute, output):

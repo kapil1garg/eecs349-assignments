@@ -73,24 +73,24 @@ print "Percentage Incorrect on Validation set w/o Pruning: " + \
     str(100 * float(incorrect)/validate_length) + "%"
 print "Total Instances classified: " + str(correct + incorrect) + "\n"
 
-# # Printing in Disjunctive Normal Form
-# positive_classification = []
-# negative_classification = []
-# def dict_dfs(tree, output = ""):
-#     if not (type(tree) is dict):
-#         last_opp = output.rfind(" ^ ")
-#         output = output[:last_opp]
-#         if int(tree) == 1:
-#             positive_classification.append(output)
-#         else:
-#             negative_classification.append(output)
-#         # output += ": " + str(tree)
-#         # print output
-#     else:
-#         output += str(tree.keys()[0])
-#         for i in tree[tree.keys()[0]].keys():
-#             # output += " is " + str(i)
-#             dict_dfs(tree[tree.keys()[0]][i], output + " is " + str(i) + " ^ ")
+# Printing in Disjunctive Normal Form
+positive_classification = []
+negative_classification = []
+def dict_dfs(tree, output = ""):
+    if not (type(tree) is dict):
+        last_opp = output.rfind(" ^ ")
+        output = output[:last_opp]
+        if int(tree) == 1:
+            positive_classification.append(output)
+        else:
+            negative_classification.append(output)
+        # output += ": " + str(tree)
+        # print output
+    else:
+        output += str(tree.keys()[0])
+        for i in tree[tree.keys()[0]].keys():
+            # output += " is " + str(i)
+            dict_dfs(tree[tree.keys()[0]][i], output + " is " + str(i) + " ^ ")
 # dict_dfs(tree) 
 # counter = 0
 # print_limit = 16
