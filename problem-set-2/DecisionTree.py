@@ -1,3 +1,5 @@
+#!/usr/bin/env pypy
+
 import math
 import TreeElement
 import copy
@@ -75,8 +77,8 @@ class DecisionTree:
         dt (list): the complete decision tree (also stores this value in dt)
     """
     attributes = [att for att in self.meta.keys() if att != self.binary_att]
-    dt = self.DTL(self.data, attributes)
-    return dt
+    self.dt = self.DTL(self.data, attributes)
+    return self.dt
 
   def DTL(self, examples, attributes, default = None):
     """Builds a decision tree recursively
@@ -93,17 +95,17 @@ class DecisionTree:
     if len(examples[0]) == 0:
       # print "No examples: ",
       # print default
-      return default
+      return str(default)
     elif self.sameClass(examples[self.binary_index]):
       # print "Is same class: ", 
       #print examples[self.binary_index][0],
       # print attributes,
       # print examples
-      return examples[self.binary_index][0]
+      return str(examples[self.binary_index][0])
     elif len(attributes) == 0:
       # print "No attributes: ",
       # print self.mode(examples[self.binary_index])
-      return self.mode(examples[self.binary_index])
+      return str(self.mode(examples[self.binary_index]))
     else:
       bestAtt, bestSplits = self.chooseAttribute(examples, attributes)
       split_examples = self.splitData(examples, bestAtt, bestSplits)
@@ -187,42 +189,42 @@ class DecisionTree:
     attribute_index = self.meta[attribute]["index"]
 
     if self.meta[attribute]["type"] == "numeric":
-      print "    numeric"
+      # print "    numeric"
       subtrees = [[] for _ in range(2)]
       lessThan = [[] for _ in range(len(examples))]
       greaterThan = [[] for _ in range(len(examples))]
       for row in range(len(examples[0])): #for each row/element in examples
         if examples[attribute_index][row] == "?":
           for element in range(len(examples)): #for each column/attribute in examples
-            questions[element].append(copy.deepcopy(examples[element][row]))
+            questions[element].append(examples[element][row])
         elif float(examples[attribute_index][row]) <= float(splits):
           for element in range(len(examples)): #for each column/attribute in examples
-            lessThan[element].append(copy.deepcopy(examples[element][row]))
+            lessThan[element].append(examples[element][row])
         elif float(examples[attribute_index][row]) > float(splits):
           for element in range(len(examples)): #for each column/attribute in examples
-            greaterThan[element].append(copy.deepcopy(examples[element][row]))
-      subtrees[0] = copy.deepcopy(lessThan)
-      subtrees[1] = copy.deepcopy(greaterThan)
+            greaterThan[element].append(examples[element][row])
+      subtrees[0] = lessThan
+      subtrees[1] = greaterThan
     
     elif self.meta[attribute]["type"] == "nominal":
-      print "    nominal"
+      # print "    nominal"
       counter = 0
       subtrees = [[] for _ in range(len(splits))]
       for split in splits:
         tempTree = [[] for _ in range(len(examples))]
-        subtrees[counter] = copy.deepcopy(tempTree)
+        subtrees[counter] = tempTree
         counter += 1
       counter = 0
       for row in range(len(examples[0])):
         if examples[attribute_index][row] == "?": #THIS IS TRUE A CRAZY NUMBER OF TIMES
           for element in range(len(examples)): #for each column/attribute in examples
-            questions[element].append(copy.deepcopy(examples[element][row]))
+            questions[element].append(examples[element][row])
         else:
           counter = 0
           while counter < len(splits):
             if examples[attribute_index][row] == splits[counter]:
               for element in range(len(examples)): #for each column/attribute in examples
-                subtrees[counter][element].append(copy.deepcopy(examples[element][row]))
+                subtrees[counter][element].append(examples[element][row])
             counter += 1
 
 
@@ -375,6 +377,53 @@ class DecisionTree:
     """
     sorted_tuples = sorted(zip(attribute, output))
     return [att for (att, classification) in sorted_tuples], [classify for (att, classification) in sorted_tuples]
+
+  def remove_blank(self, data):
+    processed_data = [[] for _ in range(len(data))]
+    for i in range(len(data[0])): 
+      if data[self.binary_index][i] != "?":
+        for j in range(len(data)):
+          processed_data[j].append(data[j][i])
+    return processed_data
+
+  def classify(self, tree, data):
+    data_length = len(data[0])
+    data_indices = range(data_length)
+    classification_output = [""] * data_length
+    for i in data_indices:
+      current_tree = tree.copy()
+      isClassified = False
+
+      while not isClassified:
+        if not (type(current_tree) is dict):
+          classification_output[i] = current_tree
+          isClassified = True
+        else:
+          current_key = current_tree.keys()[0]
+          current_splits = current_tree[current_key].keys()
+          data_index = self.meta[current_key]["index"]
+
+          if data[data_index][i] == "?":
+            current_tree = current_tree[current_key][current_splits[0]]
+          elif self.meta[current_key]["type"] == "numeric":
+            numeric_key = current_splits[0]
+            if "<=" in numeric_key:
+              if data[data_index][i] <= float(numeric_key.replace("<=", "")):
+                current_tree = current_tree[current_key][current_splits[0]]
+              else:
+                current_tree = current_tree[current_key][current_splits[1]]
+            else:
+              if data[data_index][i] > float(numeric_key.replace(">", "")):
+                current_tree = current_tree[current_key][current_splits[1]]
+              else:
+                current_tree = current_tree[current_key][current_splits[0]]
+          else:
+            for split in current_splits:
+              if data[data_index][i] == split:
+                current_tree = current_tree[current_key][split]
+                break
+      # print "Percent Complete: " + str(100 * float(i)/data_length)
+    return classification_output
 
 
   def prune(self, tree):
