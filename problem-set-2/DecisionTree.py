@@ -91,7 +91,7 @@ class DecisionTree:
     Returns:
         TreeElement: the filled decision tree
     """
-    print attributes
+    # print attributes
     if len(examples[0]) == 0:
       # print "No examples: ",
       # print default
@@ -432,21 +432,24 @@ class DecisionTree:
     Returns:
       float error: error of testData compared to trueData
     """
-
+    EPSILON = math.exp(-100) # must be added to avoid issues with 0/0
     numDiff = 0
     total = 0
+    true_length = len(trueData[self.binary_index])
+    true_indicies = range(true_length)
+
     if testData == 1 or testData == 0:
-      for row in trueData[self.binary_index]:
+      for row in true_indicies:
         total += 1
-        if trueData[self.binary_index] != str(testData):
+        if trueData[self.binary_index][row] != str(testData):
           numDiff += 1
     else:
-      for row in trueData[self.binary_index]:
+      for row in true_indicies:
         total += 1
-        if trueData[self.binary_index] != testData[self.binary_index]:
+        if trueData[self.binary_index][row] != testData[row]:
           numDiff += 1
 
-    return float(numDiff)/float(total)
+    return float(numDiff)/(float(total) + EPSILON)
 
 
   def prune(self, tree, examples):
@@ -455,6 +458,7 @@ class DecisionTree:
     Returns:
       int accuracy: pruned tree
     """
+    tree = self.dt
     #TODO: WHEN DESIGNING TREE, IF PRUNING WILL OCCUR, SET ASIDE A PORTION OF EXAMPLES (AT RANDOM) AS VALIDATION SET (1/3RD seems to be a good number)
 
     #Go through the tree (top-bottom?)
@@ -473,34 +477,41 @@ class DecisionTree:
       return
       #return
     #Get splits/split_examples
-    key = tree.keys()
+    key = tree.keys()[0]
+    print "Tree Keys: ",
+    print tree.keys()
     splits = []
     for spl in tree[key].keys():
       if "<=" in spl:
-        splits.append(spl[2:])
+        splits = spl.replace("<=", "")
+        break
       elif ">" in spl:
-        splits.append(spl[1:])
+        splits = spl.replace(">", "")
+        break
       else:
-        for att in self.meta[attributes]:
-          if spl in self.meta[att]["values"]:
-            splits.append(spl)
-            break
-    split_examples = self.splitData(examples, tree[key], splits)
+        splits.append(spl)
+        # for att in self.meta.keys():
+        #   print att
+        #   if spl in self.meta[att]["values"]:
+        #     splits.append(spl)
+        #     break
+
+    split_examples = self.splitData(examples, key, splits)
     #for each branch in tree
     split_index = 0
-    for spl in tree.keys():
-      prune(tree[spl], split_examples[split_index])
+    for spl in tree[key].keys():
+      self.prune(tree[key][spl], split_examples[split_index])
       split_index += 1
       #totalAccuracy += prune(subtree, split_examples[i])
     #clasification = classify(tree, examples)
-    classification = classify(tree, examples)
-    thisAccuracy = accuracy(examples, classification)
-    thisMode = mode(examples)
-    modeAccuracy = accuracy(examples, thisMode)
+    classification = self.classify(tree, examples)
+    thisAccuracy = self.accuracy(examples, classification)
+    thisMode = self.mode(examples)
+    modeAccuracy = self.accuracy(examples, thisMode)
     if modeAccuracy > thisAccuracy:
       #turn this tree into a leaf with value of thisMode
       tree = str(thisMode)
-    return
+    return 
 
 
 

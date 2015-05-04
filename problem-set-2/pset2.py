@@ -25,6 +25,9 @@ validation_set = csv.CSVReader("./data/bvalidate.csv")
 validate_header, validate_data = validation_set.readFile()
 validate_data = thisTree.remove_blank(validate_data)
 
+# Prune tree
+thisTree.prune(tree, validate_data)
+
 # Classify validation set
 validate_classification = thisTree.classify(tree, validate_data)
 # print validate_classification
