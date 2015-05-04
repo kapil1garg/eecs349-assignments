@@ -377,11 +377,81 @@ class DecisionTree:
     return [att for (att, classification) in sorted_tuples], [classify for (att, classification) in sorted_tuples]
 
 
-  def prune(self, tree):
+  def accuracy(self, trueData, testData):
+    """Determines accuracy of testData
+
+    Returns:
+      float error: error of testData compared to trueData
+    """
+
+    numDiff = 0
+    total = 0
+    if testData == 1 or testData == 0:
+      for row in trueData[self.binary_index]:
+        total += 1
+        if trueData[self.binary_index] != str(testData):
+          numDiff += 1
+    else:
+      for row in trueData[self.binary_index]:
+        total += 1
+        if trueData[self.binary_index] != testData[self.binary_index]:
+          numDiff += 1
+
+    return float(numDiff)/float(total)
+
+
+  def prune(self, tree, examples):
     """Prune the given tree
 
     Returns:
-        dt prunedTree: pruned tree
+      int accuracy: pruned tree
     """
-    #lolgoodluck
-    pass
+    #TODO: WHEN DESIGNING TREE, IF PRUNING WILL OCCUR, SET ASIDE A PORTION OF EXAMPLES (AT RANDOM) AS VALIDATION SET (1/3RD seems to be a good number)
+
+    #Go through the tree (top-bottom?)
+    #for each node
+      #sum errors (gain) over entire subtree
+      #sum errors (gain) over same set of examples if the tree were instead using mode() label
+      #prune node with highest reduction in error
+      #restart each time a subtree is pruned? Repeat until error no longer reduced
+
+    #Will this cause errors by deleting subtrees as you're going through them?
+    #we'll find out!
+
+    #NEW PLAN BELOW- PROBABLY BETTER
+    #if tree is a leaf node
+    if not(type(tree) is dict):
+      return
+      #return
+    #Get splits/split_examples
+    key = tree.keys()
+    splits = []
+    for spl in tree[key].keys():
+      if "<=" in spl:
+        splits.append(spl[2:])
+      elif ">" in spl:
+        splits.append(spl[1:])
+      else:
+        for att in self.meta[attributes]:
+          if spl in self.meta[att]["values"]:
+            splits.append(spl)
+            break
+    split_examples = self.splitData(examples, tree[key], splits)
+    #for each branch in tree
+    split_index = 0
+    for spl in tree.keys():
+      prune(tree[spl], split_examples[split_index])
+      split_index += 1
+      #totalAccuracy += prune(subtree, split_examples[i])
+    #clasification = classify(tree, examples)
+    classification = classify(tree, examples)
+    thisAccuracy = accuracy(examples, classification)
+    thisMode = mode(examples)
+    modeAccuracy = accuracy(examples, thisMode)
+    if modeAccuracy > thisAccuracy:
+      #turn this tree into a leaf with value of thisMode
+      tree = str(thisMode)
+    return
+
+
+
