@@ -18,6 +18,7 @@ class DecisionTree:
     self.data = tempdata
     self.meta = tempmeta
     self.dt = []
+    self.nLeaves = 0
     
     for att in self.meta:
         if self.meta[att]["type"] == "binary":
@@ -52,9 +53,9 @@ class DecisionTree:
 
         for i in self.data[att_index]:
             if i != "?":
-              if i < min_val:
+              if float(i) < float(min_val):
                 min_val = i
-              elif i > max_val: 
+              elif float(i) > float(max_val): 
                 max_val = i
         stat_vector = [float(min_val), float(max_val), float(max_val) - float(min_val)] # min, max, range
         self.meta[att]["stats"] = stat_vector
@@ -66,7 +67,7 @@ class DecisionTree:
         nominal_values = []
 
         for i in self.data[att_index]:
-          if i != "?" and not i in nominal_values:
+          if i != "?" and not (i in nominal_values):
             nominal_values.append(i)
         self.meta[att]["values"] = nominal_values
 
@@ -95,16 +96,19 @@ class DecisionTree:
     if len(examples[0]) == 0:
       # print "No examples: ",
       # print default
+      self.nLeaves += 1
       return str(default)
     elif self.sameClass(examples[self.binary_index]):
       # print "Is same class: ", 
       #print examples[self.binary_index][0],
       # print attributes,
       # print examples
+      self.nLeaves += 1
       return str(examples[self.binary_index][0])
     elif len(attributes) == 0:
       # print "No attributes: ",
       # print self.mode(examples[self.binary_index])
+      self.nLeaves += 1
       return str(self.mode(examples[self.binary_index]))
     else:
       bestAtt, bestSplits = self.chooseAttribute(examples, attributes)
@@ -183,7 +187,6 @@ class DecisionTree:
         list[]: the data fitting along the split
         list[]: the data fitting outside the split
     """
-
     subtrees = []
     questions = [[] for _ in range(len(examples))]
     attribute_index = self.meta[attribute]["index"]
@@ -244,19 +247,6 @@ class DecisionTree:
           subtrees[biggestTree][k].append(questions[k][i])
     #print "subtree size after ?: " + str(len(subtrees))
     return subtrees
-
-  def getRow(self, examples, numRow):
-    """Returns the row in examples
-
-    Returns:
-      list[]: the row from examples
-    """
-
-    row = []
-    for att in examples:
-      row.append(att[numRow])
-
-    return row
 
   def chooseAttribute(self, examples, attributes):
     """Chooses best attribute to split on
@@ -321,14 +311,9 @@ class DecisionTree:
     binary_0_count = 0
     total_rows = 0
 
-    for i in classification:
-      if i == "1":
-        binary_1_count += 1
-      elif i == "0":
-        binary_0_count += 1
-      total_rows += 1
-
-    total_rows = float(total_rows) + EPSILON
+    binary_1_count = classification.count("1")
+    binary_0_count = classification.count("0")
+    total_rows = float(binary_1_count + binary_0_count) + EPSILON
 
     positive_probability = (binary_1_count/total_rows)
     negative_probability = (binary_0_count/total_rows)
@@ -349,7 +334,7 @@ class DecisionTree:
     split_examples = self.splitData(examples, attribute, splits)
     all_examples = []
     all_count = 0
-    total_gain = 0
+    total_gain = 0.0
 
     # total examples and count
     # print len(split_examples[0])
@@ -357,12 +342,13 @@ class DecisionTree:
       all_examples += (split[self.binary_index])
     all_count = len(all_examples)
 
+    total_gain += self.entropy(all_examples)
+    total_split_gain = 0
     # split examples and count
     for split in split_examples:
-      total_gain -= (split[self.binary_index].count("1")/float(all_count)) * self.entropy(split[self.binary_index])
-
-    total_gain += self.entropy(all_examples)
+      total_split_gain += (split[self.binary_index].count("1")/float(all_count)) * self.entropy(split[self.binary_index])
     #print "Gain: " + str(total_gain)
+    total_gain = total_gain - total_split_gain
     return total_gain
 
   def sort_attributes(self, attribute, output):
@@ -389,41 +375,47 @@ class DecisionTree:
   def classify(self, tree, data):
     data_length = len(data[0])
     data_indices = range(data_length)
-    classification_output = [""] * data_length
+    classifications = [""] * data_length
+
     for i in data_indices:
-      current_tree = tree.copy()
-      isClassified = False
+      current_instance = []
+      for j in data:
+        current_instance.append(j[i])
+      classifications[i] = self.recursive_classify(tree, current_instance)
+    return classifications
 
-      while not isClassified:
-        if not (type(current_tree) is dict):
-          classification_output[i] = current_tree
-          isClassified = True
-        else:
-          current_key = current_tree.keys()[0]
-          current_splits = current_tree[current_key].keys()
-          data_index = self.meta[current_key]["index"]
+  def recursive_classify(self, tree, instance):
+    if not tree:
+      return None
+    elif not (type(tree) is dict):
+      return tree
+    else:
+      current_key = tree.keys()[0]
+      current_splits = tree[current_key].keys()
+      att_index = self.meta[current_key]["index"]
+      att_type = self.meta[current_key]["type"]
 
-          if data[data_index][i] == "?":
-            current_tree = current_tree[current_key][current_splits[0]]
-          elif self.meta[current_key]["type"] == "numeric":
-            numeric_key = current_splits[0]
-            if "<=" in numeric_key:
-              if data[data_index][i] <= float(numeric_key.replace("<=", "")):
-                current_tree = current_tree[current_key][current_splits[0]]
-              else:
-                current_tree = current_tree[current_key][current_splits[1]]
-            else:
-              if data[data_index][i] > float(numeric_key.replace(">", "")):
-                current_tree = current_tree[current_key][current_splits[1]]
-              else:
-                current_tree = current_tree[current_key][current_splits[0]]
+      if instance[att_index] == "?":
+        return self.recursive_classify(tree[current_key][current_splits[0]], instance)
+      elif att_type == "numeric":
+        numeric_key = current_splits[0]
+        if "<=" in numeric_key:
+          numeric_key = float(numeric_key.replace("<=", ""))
+          if float(instance[att_index]) <= numeric_key:
+            return self.recursive_classify(tree[current_key][current_splits[0]], instance)
           else:
-            for split in current_splits:
-              if data[data_index][i] == split:
-                current_tree = current_tree[current_key][split]
-                break
-      # print "Percent Complete: " + str(100 * float(i)/data_length)
-    return classification_output
+            return self.recursive_classify(tree[current_key][current_splits[1]], instance)
+        else:
+          numeric_key = float(numeric_key.replace(">", ""))
+          if float(instance[att_index]) > numeric_key:
+            return self.recursive_classify(tree[current_key][current_splits[0]], instance)
+          else:
+            return self.recursive_classify(tree[current_key][current_splits[1]], instance)
+      else:
+        for split in current_splits:
+          if instance[att_index] == split:
+            return self.recursive_classify(tree[current_key][split], instance)
+            break
 
 
   def accuracy(self, trueData, testData):
