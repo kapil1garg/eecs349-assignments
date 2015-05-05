@@ -33,6 +33,34 @@ validate_data = thisTree.remove_blank(validate_data)
 training_data = thisTree.remove_blank(training_data)
 training_classification = thisTree.classify(tree, training_data)
 
+
+########################################################################
+
+prunedTree = thisTree.pruneBreadth(tree, validate_data)
+pruned_classification = thisTree.classify(prunedTree, validate_data)
+
+# Calculate accuracy
+correct = 0
+incorrect = 0
+validate_length = len(validate_data[0])
+validate_width = len(validate_data)
+validate_indicies = range(validate_length)
+for i in validate_indicies:
+    if validate_data[validate_width - 1][i] != pruned_classification[i]:
+        incorrect += 1
+    else:
+        correct += 1
+
+print "Percentage Correct on Validation set w Pruning: " + \
+    str(100 * float(correct)/validate_length) + "%"        
+print "Percentage Incorrect on Validation set w Pruning: " + \
+    str(100 * float(incorrect)/validate_length) + "%"
+print "Total Instances classified: " + str(correct + incorrect) + "\n"
+print "Pruned Number leaves: " + str(thisTree.nLeaves) + "\n"
+
+########################################################################
+
+
 # Calculate accuracy
 correct = 0
 incorrect = 0
@@ -91,6 +119,7 @@ def dict_dfs(tree, output = ""):
         for i in tree[tree.keys()[0]].keys():
             # output += " is " + str(i)
             dict_dfs(tree[tree.keys()[0]][i], output + " is " + str(i) + " ^ ")
+
 # dict_dfs(tree) 
 # counter = 0
 # print_limit = 16

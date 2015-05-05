@@ -112,6 +112,8 @@ class DecisionTree:
       return str(self.mode(examples[self.binary_index]))
     else:
       bestAtt, bestSplits = self.chooseAttribute(examples, attributes)
+      if bestAtt ==  None:
+        return str(self.mode(examples[self.binary_index]))
       split_examples = self.splitData(examples, bestAtt, bestSplits)
       if self.meta[bestAtt]["type"] == "numeric":
         string_lessequal = "<=" + str(bestSplits)
@@ -271,13 +273,15 @@ class DecisionTree:
     # for attribute in [att for att in attributes if att not in self.exclude]:
     for attribute in attributes:
       if self.meta[attribute]["type"] == "nominal":
-        gains[counter] = self.gain(examples, attribute, self.meta[attribute]["values"])
+        tempGain = self.gain(examples, attribute, self.meta[attribute]["values"])
+        gains[counter] = tempGain
         splits[counter] = (self.meta[attribute]["values"]) #IT WORKS WITHOUT THIS LINE, BUT IT REALLY SHOULDN'T
 
       elif self.meta[attribute]["type"] == "numeric":
         midpoint = (self.meta[attribute]["stats"][0] + self.meta[attribute]["stats"][1])/2
+        tempGain = self.gain(examples, attribute, midpoint)
+        gains[counter] = tempGain
         splits[counter] = (midpoint)
-        gains[counter] = self.gain(examples, attribute, splits[counter])
       names.append(attribute)
       counter += 1
 
@@ -292,7 +296,8 @@ class DecisionTree:
         maxGain = gains[counter]
         maxOuterKey = counter
       counter += 1
-
+    if(maxGain < 0.30):
+      return None, None
     bestAtt = names[maxOuterKey]
     bestSplits = splits[maxOuterKey]
     return bestAtt, bestSplits
@@ -349,7 +354,7 @@ class DecisionTree:
       total_split_gain += (split[self.binary_index].count("1")/float(all_count)) * self.entropy(split[self.binary_index])
     
     total_gain = total_gain - total_split_gain
-    if total_gain <=  0.01:
+    if total_gain <=  0.05:
       print "Gain: " + str(total_gain)
     return total_gain
 
@@ -412,7 +417,8 @@ class DecisionTree:
           if float(instance[att_index]) > numeric_key:
             return self.recursive_classify(tree[current_key][current_splits[0]], instance)
           else:
-            return self.recursive_classify(tree[current_key][current_splits[1]], instance)
+            if len(tree[current_key]) > 1:
+              return self.recursive_classify(tree[current_key][current_splits[1]], instance)
       else:
         for split in current_splits:
           if instance[att_index] == split:
@@ -431,7 +437,6 @@ class DecisionTree:
     total = 0
     true_length = len(trueData[self.binary_index])
     true_indicies = range(true_length)
-
     if testData == 1 or testData == 0:
       for row in true_indicies:
         total += 1
@@ -442,8 +447,67 @@ class DecisionTree:
         total += 1
         if trueData[self.binary_index][row] != testData[row]:
           numDiff += 1
+    acc = (float(total)-float(numDiff))/(float(total) + EPSILON)
+    print "Diff: ",
+    print numDiff,
+    print "   Total: ",
+    print total,
+    print "   Acc: ",
+    print acc
+    return acc
 
-    return float(numDiff)/(float(total) + EPSILON)
+
+  def pruneBreadth(self, tree, examples):
+    """Prune the given tree
+
+    Returns:
+      int accuracy: pruned tree
+    """
+
+    if not(type(tree) is dict):
+      print "Is Leaf Node"
+      return tree
+
+    classification = self.classify(tree, examples)
+    print "__Normal Acc__"
+    thisAccuracy = self.accuracy(examples, classification)
+    thisMode = self.mode(examples[self.binary_index])
+    print "__Mode Acc__"
+    modeAccuracy = self.accuracy(examples, thisMode)
+    if modeAccuracy-thisAccuracy>0.2:
+      print tree[tree.keys()[0]].keys()
+      print tree
+      self.nLeaves -= 1
+      return str(thisMode)
+
+
+    key = tree.keys()[0] #Attribute
+
+    splits = []
+    for spl in tree[key].keys(): #For each split in the splits
+      if "<=" in spl:
+        splits = spl.replace("<=", "")
+        break
+      elif ">" in spl:
+        splits = spl.replace(">", "")
+        break
+      else:
+        splits.append(spl) #I think
+
+    newTree = {key: {}}
+
+    split_examples = self.splitData(examples, key, splits)
+
+    splitCount = 0
+    for spl in split_examples:
+      if len(splits) < 2:
+        subtree = self.prune(tree[key][tree[key].keys()[0]], spl)
+      else:
+        subtree = self.pruneBreadth(tree[key][tree[key].keys()[splitCount]], spl)
+      newTree[key][splits[splitCount]] = subtree 
+      splitCount += 1
+    return newTree
+
 
 
   def prune(self, tree, examples):
@@ -465,7 +529,6 @@ class DecisionTree:
     #NEW PLAN BELOW- PROBABLY BETTER
     #if tree is a leaf node
     if not(type(tree) is dict):
-      #print "Not here"
       return tree
       #return
     #Get splits/split_examples
@@ -474,12 +537,15 @@ class DecisionTree:
     # print "Tree Keys: ",
     # print tree.keys()
     splits = []
+    isNum = False
     for spl in tree[key].keys():
       if "<=" in spl:
         splits = spl.replace("<=", "")
+        isNum = True
         break
       elif ">" in spl:
         splits = spl.replace(">", "")
+        isNum = True
         break
       else:
         splits.append(spl)
@@ -493,17 +559,21 @@ class DecisionTree:
     split_examples = self.splitData(examples, key, splits)
     #for each branch in tree
     split_index = 0
+
     #print len(tree[key].keys())
     for spl in tree[key].keys():
       subTree = self.prune(tree[key][spl], split_examples[split_index])
-      newTree[key][splits[split_index]]= subTree
-      print "Sub: ____________________________________________"
-      print subTree
+      newTree[key][splits[split_index]] = subTree
       split_index += 1
       #totalAccuracy += prune(subtree, split_examples[i])
     #clasification = classify(tree, examples)
-    print "NEW: //////////////////////////////////////////"
-    print newTree
+    print "split_index (total splits): ",
+    print split_index,
+    print "   Type: ",
+    print splits,
+    print "   Length: ",
+    print len(newTree[key].keys())
+    ######Thinks there's only one split (on a certain numeric split)????
     classification = self.classify(newTree, examples)
     thisAccuracy = self.accuracy(examples, classification)
     thisMode = self.mode(examples[self.binary_index])
@@ -513,9 +583,8 @@ class DecisionTree:
     # print "     Mode Accuracy: ",
     # print modeAccuracy
     if modeAccuracy > thisAccuracy:
+      self.nLeaves -= 1
       #turn this tree into a leaf with value of thisMode
-      print "Mode: ",
-      print thisMode
       newTree = str(thisMode)
     return newTree
 
