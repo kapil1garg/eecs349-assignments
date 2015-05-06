@@ -1,5 +1,4 @@
 import math
-import TreeElement
 import copy
 
 class DecisionTree:
