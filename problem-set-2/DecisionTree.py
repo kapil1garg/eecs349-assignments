@@ -19,7 +19,8 @@ class DecisionTree:
     self.dt = []
     self.nLeaves = 0
     self.pruneLeaves = 0
-  
+    
+    #Find the "solutions" column and label it
     for att in self.meta:
         if self.meta[att]["type"] == "binary":
             self.binary_index = self.meta[att]["index"]
@@ -28,6 +29,7 @@ class DecisionTree:
 
   def preprocessing(self):
     """Removes any unclassified instances from the training data and validation data"""
+
     processed_data = [[] for _ in range(len(self.data))]
     for i in range(len(self.data[0])): 
       if self.data[self.binary_index][i] != "?":
@@ -75,7 +77,11 @@ class DecisionTree:
     Returns:
         dt (list): the complete decision tree (also stores this value in dt)
     """
+
+    #Generate attributes list
     attributes = [att for att in self.meta.keys() if att != self.binary_att]
+
+    #create tree
     self.dt = self.DTL(self.data, attributes)
     return self.dt
 
@@ -90,18 +96,18 @@ class DecisionTree:
     Returns:
         TreeElement: the filled decision tree
     """
-    if len(examples[0]) == 0:
+    if len(examples[0]) == 0: #A leaf-node
       self.nLeaves += 1
       return str(default)
-    elif self.sameClass(examples[self.binary_index]):
+    elif self.sameClass(examples[self.binary_index]): #Should be a leaf-node
       self.nLeaves += 1
       return str(examples[self.binary_index][0])
-    elif len(attributes) == 0:
+    elif len(attributes) == 0: #Run out of attributes
       self.nLeaves += 1
       return str(self.mode(examples[self.binary_index]))
     else:
       bestAtt, bestSplits = self.chooseAttribute(examples, attributes)
-      if bestAtt ==  None:
+      if bestAtt ==  None: #if there is no best to choose
         return str(self.mode(examples[self.binary_index]))
       split_examples = self.splitData(examples, bestAtt, bestSplits)
       if self.meta[bestAtt]["type"] == "numeric":
@@ -111,6 +117,7 @@ class DecisionTree:
 
       tree = {bestAtt: {}}
 
+      #create the subtrees recursively
       for split_index in range(len(split_examples)):
         subtree = self.DTL(split_examples[split_index], [att for att in attributes if att != bestAtt],
          self.mode(examples[self.binary_index]))
@@ -163,6 +170,8 @@ class DecisionTree:
     questions = [[] for _ in range(len(examples))]
     attribute_index = self.meta[attribute]["index"]
 
+    #If it's a numeric, split into two lists
+    #Less than or equal to, and greater than
     if self.meta[attribute]["type"] == "numeric":
       subtrees = [[] for _ in range(2)]
       lessThan = [[] for _ in range(len(examples))]
@@ -180,6 +189,8 @@ class DecisionTree:
       subtrees[0] = lessThan
       subtrees[1] = greaterThan
     
+    #If it's a nominal, split into several lists
+    #Organized by type of nominal
     elif self.meta[attribute]["type"] == "nominal":
       counter = 0
       subtrees = [[] for _ in range(len(splits))]
@@ -200,6 +211,7 @@ class DecisionTree:
                 subtrees[counter][element].append(examples[element][row])
             counter += 1
 
+    #Find the largest subtree
     biggestTree = 0
     largestSize = 0
     for i in range(len(subtrees)):
@@ -207,11 +219,13 @@ class DecisionTree:
         largestSize = len(subtrees[i][0])
         biggestTree = i
 
+    #Put the examples with unknown attribute values into the largest split
     for i in range(len(questions[0])):
       for k in range(len(questions)):
         if(len(subtrees)>0):
           subtrees[biggestTree][k].append(questions[k][i])
     return subtrees
+
 
   def chooseAttribute(self, examples, attributes):
     """Chooses best attribute to split on
@@ -231,11 +245,13 @@ class DecisionTree:
 
     counter = 0
     for attribute in attributes:
+      #If it's nominal, calculate the gains for all of it's subtrees
       if self.meta[attribute]["type"] == "nominal":
         tempGain = self.gain(examples, attribute, self.meta[attribute]["values"])
         gains[counter] = tempGain
         splits[counter] = (self.meta[attribute]["values"]) 
 
+      #If it's numeric, calculate gains on a split at the midpoint
       elif self.meta[attribute]["type"] == "numeric":
         midpoint = (self.meta[attribute]["stats"][0] + self.meta[attribute]["stats"][1])/2
         tempGain = self.gain(examples, attribute, midpoint)
@@ -244,6 +260,7 @@ class DecisionTree:
       names.append(attribute)
       counter += 1
     
+    #Find attribute that provides maximum gain
     maxGain = 0
     maxOuterKey = 0
     counter = 0
@@ -256,6 +273,7 @@ class DecisionTree:
     bestSplits = splits[maxOuterKey]
     return bestAtt, bestSplits
   
+
   def entropy(self, classification):
     """Calculate entropy of given att/spl
     
@@ -311,6 +329,7 @@ class DecisionTree:
     return total_gain
 
   def remove_blank(self, data):
+    #Remove blank examples from data set
     processed_data = [[] for _ in range(len(data))]
     for i in range(len(data[0])): 
       if data[self.binary_index][i] != "?":
@@ -319,6 +338,7 @@ class DecisionTree:
     return processed_data
 
   def classify(self, tree, data):
+    #Determine the outputs by running through tree
     data_length = len(data[0])
     data_indices = range(data_length)
     classifications = [""] * data_length
@@ -336,14 +356,14 @@ class DecisionTree:
     elif not (type(tree) is dict):
       return tree
     else:
-      current_key = tree.keys()[0]
+      current_key = tree.keys()[0] #Attribute
       current_splits = tree[current_key].keys()
       att_index = self.meta[current_key]["index"]
       att_type = self.meta[current_key]["type"]
 
       if instance[att_index] == "?":
         return self.recursive_classify(tree[current_key][current_splits[0]], instance)
-      elif att_type == "numeric":
+      elif att_type == "numeric": #If it's numeric, remove the string segment and classify accordingly
         numeric_key = current_splits[0]
         if "<=" in numeric_key:
           numeric_key = float(numeric_key.replace("<=", ""))
@@ -358,11 +378,12 @@ class DecisionTree:
           else:
             if len(tree[current_key]) > 1:
               return self.recursive_classify(tree[current_key][current_splits[1]], instance)
-      else:
+      else: #If it's nominal, classify the splits normally
         for split in current_splits:
           if instance[att_index] == split:
             return self.recursive_classify(tree[current_key][split], instance)
             break
+
 
   def accuracy(self, trueData, testData):
     """Determines accuracy of testData
@@ -395,9 +416,11 @@ class DecisionTree:
     Returns:
       int accuracy: pruned tree
     """
+    #If tree is a leaf-node
     if not(type(tree) is dict):
       return tree
 
+    #Check pruning state
     classification = self.classify(tree, examples)
     thisAccuracy = self.accuracy(examples, classification)
     thisMode = self.mode(examples[self.binary_index])
@@ -422,14 +445,16 @@ class DecisionTree:
 
     newTree = {key: {}}
 
-    split_examples = self.splitData(examples, key, splits)
+    split_examples = self.splitData(examples, key, splits) 
 
+    #If it's a numeric, make two splits accordingly
     if type(splits) != list: 
       new_splits = []
       new_splits.append("<=" + splits)
       new_splits.append(">" + splits)
       splits = new_splits
 
+    #for each split, recurse 
     for spl in range(len(split_examples)):
       subtree = self.prune(tree[key][splits[spl]], split_examples[spl])
       newTree[key][splits[spl]] = subtree

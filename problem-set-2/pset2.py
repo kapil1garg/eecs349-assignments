@@ -129,22 +129,3 @@ def dict_dfs(tree, output = ""):
         for i in tree[tree.keys()[0]].keys():
             # output += " is " + str(i)
             dict_dfs(tree[tree.keys()[0]][i], output + " is " + str(i) + " ^ ")
-
-# dict_dfs(tree) 
-# counter = 0
-# print_limit = 16
-# while counter < print_limit:
-#     print "(" + positive_classification[counter] + ") V",
-#     counter += 1
-# print ": 1"
-# counter = 0
-# while counter < print_limit:
-#     print "(" + negative_classification[counter] + ") V",
-#     counter += 1
-# print ": 0"
-# print "Total Paths: " + str(len(positive_classification) + len(negative_classification))
-
-
-
-
-
